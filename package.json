@@ -4,7 +4,7 @@
   "description": "A build server for collapp plugin system",
   "main": "src/index.ts",
   "scripts": {
-    "start": "node build/index.js",
+    "start": "node build/src/index.js",
     "dev": "doppler run --command=\"npm run run\"",
     "run": "ts-node-dev src/index.ts",
     "build": "rimraf ./build && tsc"
