@@ -5,11 +5,11 @@ import { WebSocketServer } from "ws";
 import { match } from "node-match-path";
 import { rooms, RoomSocket } from "./ws/roomSocket";
 
-server.listen(process.env.BUILD_SERVER_PORT, async () => {
+server.listen(process.env.PORT, async () => {
   console.log(
     chalk.green(
       `Server is listening on port: ${chalk.greenBright.bold(
-        process.env.BUILD_SERVER_PORT
+        process.env.PORT
       )} for incoming HTTP requests`
     )
   );

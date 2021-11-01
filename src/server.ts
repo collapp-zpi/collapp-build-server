@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { buildRouter } from "./buildRouter";
 import { pluginRouter } from "./pluginRouter";
 import cors from "cors";
@@ -11,6 +11,10 @@ const server = express();
 server.use(helmet());
 server.use(cors());
 server.use(bodyParser.json());
+
+server.get("/", async (req: Request, res: Response) => {
+  res.status(200).send("Ayo!");
+});
 
 server.use(buildRouter);
 server.use(pluginRouter);
