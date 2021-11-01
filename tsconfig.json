@@ -6,11 +6,25 @@
     "module": "commonjs",
     "lib": ["es2020"],
     "allowJs": true,
-    "outDir": "build",
+    "outDir": "out",
     "rootDir": ".",
     "strict": false,
     "noImplicitAny": false,
     "esModuleInterop": true,
     "resolveJsonModule": true
-  }
+  },
+  "exclude": ["webpack.js"],
+  "files": [
+    "src/server.ts",
+    "src/index.ts",
+    "src/pluginRouter.ts",
+    "src/buildRouter.ts",
+    "src/ws/roomSocket.ts",
+    "src/modules/loadFromRemote.ts",
+    "src/modules/pluginData.ts",
+    "src/modules/saveModule.ts",
+    "src/config/handleError.ts",
+    "remote-component.config.js",
+    "postcss.config.js"
+  ]
 }

@@ -1,7 +1,6 @@
-import path from "path";
-import chalk from "chalk";
-import fs from "fs";
-import { PluginRequest } from "./src/build/build";
+const path = require("path");
+const chalk = require("chalk");
+const fs = require("fs");
 const webpack = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
 const remoteComponentConfig = require("./remote-component.config").resolve;
@@ -116,7 +115,7 @@ const compiler = webpack({
   },
 });
 
-export async function runBuild(plugin: PluginRequest, onFinish) {
+async function runBuild(plugin, onFinish) {
   console.log(chalk.green(`${plugin.name} plugin -> build started...`));
 
   // Clear out directory
@@ -139,3 +138,5 @@ export async function runBuild(plugin: PluginRequest, onFinish) {
     });
   });
 }
+
+module.exports = { runBuild };

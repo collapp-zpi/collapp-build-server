@@ -8,6 +8,8 @@ module.exports = {
     content: [
       "./src/build/plugin/components/**/*.{js,jsx,ts,tsx}",
       "./src/build/**/*.{js,jsx,ts,tsx}",
+      "./out/src/build/plugin/components/**/*.{js,jsx,ts,tsx}",
+      "./out/src/build/**/*.{js,jsx,ts,tsx}",
     ],
   },
   darkMode: false,
