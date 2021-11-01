@@ -1,0 +1,33 @@
+import chalk from "chalk";
+import server from "./server";
+import { syncPlugins } from "./modules/loadFromRemote";
+import { WebSocketServer } from "ws";
+import { match } from "node-match-path";
+import { rooms, RoomSocket } from "./ws/roomSocket";
+
+server.listen(process.env.BUILD_SERVER_PORT, async () => {
+  console.log(
+    chalk.green(
+      `Server is listening on port: ${chalk.greenBright.bold(
+        process.env.BUILD_SERVER_PORT
+      )} for incoming HTTP requests`
+    )
+  );
+
+  await syncPlugins();
+  console.log(chalk.gray("Waiting for requests..."));
+});
+
+const wss = new WebSocketServer({ port: 8080 });
+
+wss.on("connection", (ws, req) => {
+  const { matches, params } = match("/board/:id", req.url);
+
+  if (!matches || !params?.id) {
+    ws.close();
+    return;
+  }
+
+  new RoomSocket().init(ws, params.id);
+  ws.send(`You have connected to a room '${params.id}'`);
+});
