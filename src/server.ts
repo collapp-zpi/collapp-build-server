@@ -13,7 +13,7 @@ server.use(cors());
 server.use(bodyParser.json());
 
 server.get("/", async (req: Request, res: Response) => {
-  res.status(200).send("Ayo!");
+  res.status(200).send("Server is awake");
 });
 
 server.use(buildRouter);

@@ -2,6 +2,7 @@ import { Router, Response, Request } from "express";
 import { BuildResults, processPlugin } from "./build/build";
 import queue from "express-queue";
 import { ErrorEmail, SuccessEmail } from "@collapp/email-sdk";
+import axios from "axios";
 
 export const buildRouter = Router();
 
@@ -12,6 +13,9 @@ buildRouter.get("/build", async (req: Request, res: Response) => {
 });
 
 buildRouter.post("/build", async (req: Request, res: Response) => {
+  // Wake up that sleepy baby
+  await axios.get("https://collapp-email-microservice.herokuapp.com/");
+
   processPlugin(req.body, async (results: BuildResults) => {
     if (results.success) {
       const mail = new SuccessEmail(process.env.RABBIT_URL);
