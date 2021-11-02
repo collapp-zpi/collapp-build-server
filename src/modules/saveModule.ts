@@ -52,7 +52,9 @@ export async function downloadAndUnzip(request: PluginRequest, onFinish) {
           fs.rmSync(path.join(tempPath, "tailwind.config.js"));
           fs.rmSync(path.join(tempPath, "hash.json"));
           fs.rmSync(path.join(tempPath, "collapp-config.json"));
-          fs.rmSync(path.join(tempPath, "server.js"));
+          if (fs.existsSync(path.join(tempPath, "server.js"))) {
+            fs.rmSync(path.join(tempPath, "server.js"));
+          }
           file.close();
           fs.moveSync(tempPath, plugin);
           return onFinish(true, null);
