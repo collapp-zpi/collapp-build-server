@@ -7,12 +7,15 @@
     "start": "cross-env NODE_ENV=development node out/src/index.js",
     "dev": "doppler run --command=\"npm run run\"",
     "run": "ts-node-dev src/index.ts",
-    "build": "rimraf ./out && cross-env NODE_ENV=development tsc && run-func ./moveFiles.cjs moveFiles"
+    "build": "rimraf ./out && cross-env NODE_ENV=development tsc && run-func ./moveFiles.cjs moveFiles",
+    "prisma-push": "git subtree push --prefix=prisma https://github.com/collapp-zpi/prisma main",
+    "prisma-pull": "git subtree pull --prefix=prisma https://github.com/collapp-zpi/prisma main"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@collapp/email-sdk": "^1.0.9",
+    "@prisma/client": "^3.4.0",
     "@tailwindcss/aspect-ratio": "^0.3.0",
     "adm-zip": "^0.5.9",
     "async": "^3.2.2",
@@ -80,6 +83,7 @@
     "mini-css-extract-plugin": "^2.4.3",
     "node-sass": "^6.0.1",
     "prettier": "^2.4.1",
+    "prisma": "^3.4.0",
     "react-dom": "^17.0.2",
     "regenerator-runtime": "^0.13.9",
     "sass-loader": "^12.3.0",

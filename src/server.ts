@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
-import { buildRouter } from "./buildRouter";
-import { pluginRouter } from "./pluginRouter";
+import { buildRouter } from "./routes/buildRouter";
+import { pluginRouter } from "./routes/pluginRouter";
 import cors from "cors";
 import helmet from "helmet";
 import bodyParser from "body-parser";

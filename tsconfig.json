@@ -18,7 +18,7 @@
     "src/server.ts",
     "src/index.ts",
     "src/pluginRouter.ts",
-    "src/buildRouter.ts",
+    "src/routes/buildRouter.ts",
     "src/ws/roomSocket.ts",
     "src/modules/loadFromRemote.ts",
     "src/modules/pluginData.ts",

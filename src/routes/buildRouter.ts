@@ -1,8 +1,9 @@
 import { Router, Response, Request } from "express";
-import { BuildResults, processPlugin } from "./build/build";
+import { BuildResults, processPlugin } from "../build/build";
 import queue from "express-queue";
 import { ErrorEmail, SuccessEmail } from "@collapp/email-sdk";
 import axios from "axios";
+import { successBuild } from "../build/updateDB";
 
 export const buildRouter = Router();
 
@@ -26,6 +27,7 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         context: {},
       });
       mail.disconnect();
+      await successBuild(req.body);
       res.status(200).send(results);
     } else {
       const mail = new ErrorEmail(process.env.RABBIT_URL);
