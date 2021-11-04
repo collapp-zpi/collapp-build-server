@@ -1,34 +1,36 @@
-import chalk from "chalk";
 import fs from "fs-extra";
 import path from "path";
 import { PluginRequest } from "../build/build";
 import { hashElement } from "folder-hash";
+import {
+  safeDirectoryCreate,
+  safeDirectoryRemove,
+  safeFileRemove,
+  safeMove,
+} from "../utils/fileUtils";
+import { ResponseSingleton } from "../utils/response";
 const extract = require("extract-zip");
 const https = require("https");
+const ora = require("ora");
 
 export async function downloadAndUnzip(request: PluginRequest, onFinish) {
+  const response = ResponseSingleton.getInstance();
   const tempPath = path.join(__dirname, "temp");
   const plugin = path.join(__dirname, "..", "build", "plugin");
 
-  if (!fs.existsSync(tempPath)) {
-    fs.mkdirSync(tempPath);
-  } else {
-    fs.rmdirSync(tempPath, { recursive: true });
-    fs.mkdirSync(tempPath);
-  }
+  safeDirectoryRemove(tempPath);
+  safeDirectoryCreate(tempPath);
+  safeDirectoryRemove(plugin);
 
-  if (fs.existsSync(plugin)) {
-    fs.rmdirSync(plugin, { recursive: true });
-    // fs.mkdirSync(plugin);
-  }
-
+  const dowloadSpinner = ora("Download zipped code").start();
   const file = fs.createWriteStream(tempPath + "/plugin.zip");
   https
     .get(request.zip.url, (response) => {
       response.pipe(file);
       file.on("finish", async () => {
+        dowloadSpinner.succeed("Zipped code downloaded");
+        const hashSpinner = ora("Validate hash").start();
         await extract(tempPath + "/plugin.zip", { dir: tempPath });
-        // Calculate hash
         const options = {
           folders: { exclude: ["node_modules", "test_coverage"] },
           files: {
@@ -46,32 +48,34 @@ export async function downloadAndUnzip(request: PluginRequest, onFinish) {
         const hashObject = JSON.parse(hashRead);
 
         if (hash.hash == hashObject.hash) {
-          console.log(chalk.blue("Hash match"));
-          fs.rmSync(path.resolve(tempPath, "plugin.zip"));
-          fs.rmSync(path.join(tempPath, "package.json"));
-          fs.rmSync(path.join(tempPath, "tailwind.config.js"));
-          fs.rmSync(path.join(tempPath, "hash.json"));
-          fs.rmSync(path.join(tempPath, "collapp-config.json"));
-          if (fs.existsSync(path.join(tempPath, "server.js"))) {
-            fs.rmSync(path.join(tempPath, "server.js"));
-          }
+          hashSpinner.succeed("Hash matched");
+          const cleanSpinner = ora("Clean up");
+          safeFileRemove(path.resolve(tempPath, "plugin.zip"));
+          safeFileRemove(path.join(tempPath, "package.json"));
+          safeFileRemove(path.join(tempPath, "tailwind.config.js"));
+          safeFileRemove(path.join(tempPath, "hash.json"));
+          safeFileRemove(path.join(tempPath, "collapp-config.json"));
+          safeFileRemove(path.join(tempPath, "server.js"));
           file.close();
-          fs.moveSync(tempPath, plugin);
+          safeMove(tempPath, plugin);
+          cleanSpinner.succeed("Cleaned up");
           return onFinish(true, null);
         }
-        console.log(chalk.blue("Hash do not match"));
-        console.log(chalk.gray(`Got: ${hash.hash}`));
-        console.log(chalk.gray(`Original: ${hashObject.hash}`));
+        hashSpinner.fail("Hash did not match");
         fs.unlink(tempPath, () => {});
-        fs.rmdirSync(tempPath, { recursive: true });
+        safeDirectoryRemove(tempPath);
         file.close();
+        response.buildSuccess(false);
+        response.addBuildError("Hash do not match");
         return onFinish(false, "Hash do not match");
       });
     })
     .on("error", (err) => {
       fs.unlink(tempPath, () => {});
-      fs.rmdirSync(tempPath, { recursive: true });
-      console.log(err);
-      onFinish(false, "could not unpack code");
+      safeDirectoryRemove(tempPath);
+      response.buildSuccess(false);
+      response.addBuildError("Source code could not be downloaded");
+      dowloadSpinner.fail("Could not download zipped code");
+      onFinish(false, "Source code could not be downloaded");
     });
 }

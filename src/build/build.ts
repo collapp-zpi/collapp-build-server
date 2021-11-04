@@ -1,28 +1,19 @@
+import { ResponseSingleton } from "./../utils/response";
+import { Response } from "../utils/response";
 import { runBuild } from "../../webpack";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import AWS from "aws-sdk";
 import { downloadAndUnzip } from "../modules/saveModule";
+import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
+
+const ora = require("ora");
 
 const client = new AWS.S3({
   accessKeyId: process.env.AWS_KEY,
   secretAccessKey: process.env.AWS_SECRET_KEY,
 });
-
-export interface BuildResults {
-  success: Boolean;
-  build: {
-    success: Boolean;
-    time?: number;
-    errors?: object[];
-  };
-  upload: {
-    name: string;
-    success: Boolean;
-    files: string[];
-  };
-}
 
 export interface PluginRequest {
   requestId: string;
@@ -39,71 +30,49 @@ export interface PluginRequest {
   };
 }
 
-let results: BuildResults = {
-  success: false,
-  build: {
-    success: false,
-    time: 0,
-    errors: [],
-  },
-  upload: {
-    name: "",
-    success: false,
-    files: [],
-  },
-};
-
 export async function processPlugin(
   request: PluginRequest,
-  cb: (res: BuildResults) => void
+  cb: (res: Response) => void
 ) {
-  results = {
-    success: false,
-    build: {
-      success: false,
-      time: 0,
-      errors: [],
-    },
-    upload: {
-      name: "",
-      success: false,
-      files: [],
-    },
-  };
+  const response = ResponseSingleton.getInstance();
+  response.reset();
+
+  console.log(chalk.blue("\nBuild started"));
+  console.log(`${chalk.gray.italic(new Date())}\n`);
   downloadAndUnzip(request, async (res, e) => {
     if (e != null) {
-      results.success = false;
-      results.build.errors.push({ err: e });
-      return cb(results);
+      response.success(false);
+      response.addBuildError(e);
+      return cb(response.response());
     }
     if (!pluginExists()) {
       console.log(chalk.red("No plugin was found, what is happening"));
-      results.success = false;
-      results.build.errors.push({ err: "Plugin not found" });
-      return cb(results);
+      response.success(false);
+      response.addBuildError("Plugin was not provided");
+      return cb(response.response());
     }
     if (res) {
       runBuild(request, (succ, stats) => {
-        results.build.success = succ;
-        results.build.time = stats.time;
-        results.build.errors = stats.errors;
+        response.buildSuccess(succ);
+        response.setBuildTime(stats.time);
+        stats.errors.forEach((e) => {
+          response.addBuildError(JSON.stringify(e));
+        });
         if (succ) {
           copyToModules(request);
           uploadPlugin(request);
-          fs.rmdirSync(path.join(__dirname, "../../", "dist"), {
-            recursive: true,
-          });
-          results.success = true;
-          cb(results);
-          console.log("\n\n");
+          safeDirectoryRemove(path.join(__dirname, "../../", "dist"));
+          response.success(true);
+          console.log(chalk.green.bold("\nBuild done\n\n"));
+          return cb(response.response());
         } else {
           console.log(chalk.red("Some errors during the build"));
-          cb(results);
+          return cb(response.response());
         }
       });
     } else {
       console.log(chalk.red("Something wrong with the unzip"));
-      cb(results);
+      return cb(response.response());
     }
   });
 }
@@ -113,17 +82,10 @@ const pluginExists = () => {
 };
 
 const copyToModules = (plugin: PluginRequest) => {
-  const pluginPath = path.join(__dirname, "plugin");
-
-  if (
-    !fs.existsSync(
-      path.resolve(__dirname, "../", "modules", "scripts", plugin.name)
-    )
-  ) {
-    fs.mkdirSync(
-      path.resolve(__dirname, "../", "modules", "scripts", plugin.name)
-    );
-  }
+  const copySpinner = ora("Copy script to module").start();
+  safeDirectoryCreate(
+    path.resolve(__dirname, "../", "modules", "scripts", plugin.name)
+  );
 
   fs.copyFileSync(
     path.resolve(__dirname, "plugin", "logic", "server.js"),
@@ -137,28 +99,31 @@ const copyToModules = (plugin: PluginRequest) => {
     )
   );
 
-  if (fs.existsSync(pluginPath)) {
-    fs.rmdirSync(path.join(__dirname, "plugin"), { recursive: true });
-  }
+  safeDirectoryRemove(path.join(__dirname, "plugin"));
+  copySpinner.succeed("Finished to copy script module");
 };
 
-const uploadPlugin = (plugin: PluginRequest) => {
-  console.log(chalk.blue("Uploading plugin to AWS"));
+const uploadPlugin = async (plugin: PluginRequest) => {
+  const response = ResponseSingleton.getInstance();
+  const uploadSpinner = ora("Upload files to server").start();
   const distPath = path.resolve(__dirname, "../../", "dist");
   const files = fs.readdirSync(distPath);
-  results.upload.name = plugin.name;
-  results.upload.files = files;
-  files.forEach((f) => {
+  files.forEach((f) => response.addUploadFile(f));
+  files.forEach(async (f) => {
     const params = {
       Body: fs.readFileSync(path.resolve(__dirname, "../../", "dist", f)),
       Bucket: process.env.AWS_BUCKET,
       Key: `plugins/${plugin.name}/${f}`,
     };
-    client.upload(params, (err, data) => {
-      if (err) {
-        results.upload.success = false;
-      }
-    });
+    await client
+      .upload(params, (err, data) => {
+        if (err) {
+          response.uploadSuccess(false);
+          uploadSpinner.fail("Failed to upload files");
+        }
+      })
+      .promise();
   });
-  results.upload.success = true;
+  response.uploadSuccess(true);
+  uploadSpinner.succeed("Done uploading files to a server");
 };

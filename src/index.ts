@@ -10,12 +10,11 @@ server.listen(process.env.PORT, async () => {
     chalk.green(
       `Server is listening on port: ${chalk.greenBright.bold(
         process.env.PORT
-      )} for incoming HTTP requests`
+      )} for incoming HTTP requests \n`
     )
   );
 
   await syncPlugins();
-  console.log(chalk.gray("Waiting for requests..."));
 });
 
 const wss = new WebSocketServer({ port: 8080 });

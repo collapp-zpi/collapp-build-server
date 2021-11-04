@@ -1,6 +1,4 @@
 const path = require("path");
-const chalk = require("chalk");
-const fs = require("fs");
 const webpack = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
 const remoteComponentConfig = require("./remote-component.config").resolve;
@@ -8,6 +6,10 @@ const remoteComponentConfig = require("./remote-component.config").resolve;
 const toml = require("toml");
 const yaml = require("yamljs");
 const json5 = require("json5");
+
+const ora = require("ora");
+const safeDirectoryRemove =
+  require("./src/utils/fileUtils").safeDirectoryRemove;
 
 const compiler = webpack({
   mode: "development",
@@ -43,6 +45,7 @@ const compiler = webpack({
     libraryTarget: "commonjs",
     filename: "entry.js",
   },
+  stats: { warnings: false },
   externals: {
     ...Object.keys(remoteComponentConfig).reduce(
       (obj, key) => ({ ...obj, [key]: key }),
@@ -116,22 +119,16 @@ const compiler = webpack({
 });
 
 async function runBuild(plugin, onFinish) {
-  console.log(chalk.green(`${plugin.name} plugin -> build started...`));
+  const buildSpinner = ora(`Build of a '${plugin.name}' plugin`).start();
 
   // Clear out directory
   const p = path.join(__dirname, "dist");
-  if (fs.existsSync(p)) {
-    fs.rmdirSync(p, { recursive: true });
-  }
+  safeDirectoryRemove(p);
 
   compiler.run((err, stats) => {
-    if (!err)
-      console.log(
-        chalk.green.bold(`'${plugin.name}' plugin -> seccessful build`)
-      );
+    if (!err) buildSpinner.succeed("Build succeed");
     else {
-      console.log(chalk.red("There were some build errors"));
-      console.log(err);
+      buildSpinner.fail("Build failed");
     }
     compiler.close(() => {
       onFinish(!err, stats.toJson("minimal"));
