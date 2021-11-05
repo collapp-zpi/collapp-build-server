@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 datasource db {
   provider          = "postgresql"
   url               = env("DATABASE_URL")
@@ -10,6 +7,9 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+
+// PLUGIN
 
 model File {
   id                 String               @id @default(cuid())
@@ -32,6 +32,7 @@ model DraftPlugin {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @default(now())
   isPending   Boolean          @default(false)
+  isBuilding  Boolean          @default(false)
   icon        String?
 
   source      File?
@@ -45,6 +46,8 @@ model DraftPlugin {
   maxWidth    Int              @default(4)
   minHeight   Int              @default(1)
   maxHeight   Int              @default(4)
+
+  logs        PluginLog[]
 }
 
 model PublishedPlugin {
@@ -67,7 +70,12 @@ model PublishedPlugin {
   maxWidth    Int              @default(4)
   minHeight   Int              @default(1)
   maxHeight   Int              @default(4)
+
+  spaces      SpacePlugin[]
 }
+
+
+// DEVELOPER
 
 model DeveloperAccount {
   id                 String  @id @default(cuid())
@@ -111,6 +119,8 @@ model DeveloperUser {
 }
 
 
+// ADMIN
+
 model AdminSession {
   id           String        @id @default(cuid())
   sessionToken String        @unique
@@ -127,6 +137,7 @@ model AdminUser {
   image         String?
 //  accounts      AdminAccount[]
   sessions      AdminSession[]
+  pluginLogs    PluginLog[]
 }
 
 model AdminVerificationToken {
@@ -135,4 +146,122 @@ model AdminVerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+
+// USER
+
+model RegularSession {
+  id           String        @id @default(cuid())
+  sessionToken String        @unique
+  userId       String
+  expires      DateTime
+  user         RegularUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RegularUser {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      RegularAccount[]
+  sessions      RegularSession[]
+  spaces        SpaceUser[]
+}
+
+model RegularVerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model RegularAccount {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  oauth_token_secret String?
+  oauth_token        String?
+
+  user RegularUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+
+// logs
+
+model PluginLog {
+  id          String           @id @default(cuid())
+  date        DateTime         @default(now())
+  content     String
+
+  admin       AdminUser?       @relation(fields: [adminId], references: [id])
+  adminId     String?
+
+  plugin      DraftPlugin      @relation(fields: [pluginId], references: [id])
+  pluginId    String
+}
+
+
+// model
+
+model Space {
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  icon        String?
+  users       SpaceUser[]
+  invites     Invite[]
+  plugins     SpacePlugin[]
+}
+
+model Invite {
+  id          String           @id @default(cuid())
+  createdAt   DateTime         @default(now())
+  expiresAt   DateTime         @default(now())
+
+  space       Space            @relation(fields: [spaceId], references: [id])
+  spaceId     String
+}
+
+model SpaceUser {
+  isOwner     Boolean          @default(false)
+  canEdit     Boolean          @default(false)
+  canInvite   Boolean          @default(false)
+
+  user        RegularUser      @relation(fields: [userId], references: [id])
+  userId      String
+
+  space       Space            @relation(fields: [spaceId], references: [id])
+  spaceId     String
+
+  @@unique([userId, spaceId])
+}
+
+model SpacePlugin {
+  left        Int
+  top         Int
+  width       Int
+  height      Int
+  data        Json               @default("{}")
+
+  plugin      PublishedPlugin    @relation(fields: [pluginId], references: [id])
+  pluginId    String
+
+  space       Space              @relation(fields: [spaceId], references: [id])
+  spaceId     String
+
+  @@unique([pluginId, spaceId])
 }
