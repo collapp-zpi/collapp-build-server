@@ -4,7 +4,7 @@
   "description": "A build server for collapp plugin system",
   "main": "src/index.ts",
   "scripts": {
-    "start": "cross-env NODE_ENV=development node out/src/index.js",
+    "start": "node out/src/index.js",
     "dev": "doppler run --command=\"npm run run\"",
     "run": "ts-node-dev src/index.ts",
     "build": "rimraf ./out && cross-env NODE_ENV=development tsc && run-func ./moveFiles.cjs moveFiles",
