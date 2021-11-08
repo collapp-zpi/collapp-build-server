@@ -17,9 +17,6 @@ const client = new AWS.S3({
 
 export interface PluginRequest {
   requestId: string;
-  ping: {
-    url: string;
-  };
   name: string;
   developer: {
     name: string;
