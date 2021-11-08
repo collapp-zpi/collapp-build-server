@@ -29,7 +29,7 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
           context: {},
         });
         mail.disconnect();
-        // await successBuild(req.body);
+        await successBuild(req.body);
         res.status(200).send(results);
       } else {
         const mail = new ErrorEmail(process.env.RABBIT_URL);

@@ -8,6 +8,7 @@ export async function successBuild(plugin: PluginRequest) {
     },
     data: {
       isPending: false,
+      isBuilding: false,
     },
   });
   const draft = await prisma.draftPlugin.findUnique({
