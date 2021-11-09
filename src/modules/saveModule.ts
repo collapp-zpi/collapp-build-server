@@ -10,6 +10,7 @@ import {
 } from "../utils/fileUtils";
 import { ResponseSingleton } from "../utils/response";
 import * as Sentry from "@sentry/node";
+import { installPackages } from "../build/installLocalPackages";
 
 const extract = require("extract-zip");
 const https = require("https");
@@ -61,17 +62,27 @@ export async function downloadAndUnzip(request: PluginRequest, onFinish) {
 
               if (hash.hash == hashObject.hash) {
                 hashSpinner.succeed("Validate hash");
-                const cleanSpinner = ora("Clean up");
-                safeFileRemove(path.resolve(tempPath, "plugin.zip"));
-                safeFileRemove(path.join(tempPath, "package.json"));
-                safeFileRemove(path.join(tempPath, "tailwind.config.js"));
-                safeFileRemove(path.join(tempPath, "hash.json"));
-                safeFileRemove(path.join(tempPath, "collapp-config.json"));
-                safeFileRemove(path.join(tempPath, "server.js"));
-                file.close();
-                safeMove(tempPath, plugin);
-                cleanSpinner.succeed("Clean up");
-                return onFinish(true, null);
+
+                // Install packages
+                installPackages(path.join(tempPath, "package.json"))
+                  .then(() => {
+                    const cleanSpinner = ora("Clean up");
+                    safeFileRemove(path.resolve(tempPath, "plugin.zip"));
+                    safeFileRemove(path.join(tempPath, "package.json"));
+                    safeFileRemove(path.join(tempPath, "tailwind.config.js"));
+                    safeFileRemove(path.join(tempPath, "hash.json"));
+                    safeFileRemove(path.join(tempPath, "collapp-config.json"));
+                    safeFileRemove(path.join(tempPath, "server.js"));
+                    file.close();
+                    safeMove(tempPath, plugin);
+                    cleanSpinner.succeed("Clean up");
+                    return onFinish(true, null);
+                  })
+                  .catch((e) => {
+                    console.log(e);
+                    Sentry.captureException(e);
+                    return onFinish(false, e);
+                  });
               }
               hashSpinner.fail("Validate hash");
               fs.unlink(tempPath, () => {});
