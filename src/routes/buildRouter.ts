@@ -6,6 +6,7 @@ import { ErrorEmail, SuccessEmail } from "@collapp/email-sdk";
 import axios from "axios";
 import { successBuild } from "../build/updateDB";
 import * as res from "../utils/response";
+import * as Sentry from "@sentry/node";
 export const buildRouter = Router();
 
 buildRouter.use(queue({ activeLimit: 1, queuedLimit: -1 }));
@@ -45,7 +46,8 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         res.status(401).send(results);
       }
     });
-  } catch {
+  } catch (e) {
     res.status(500).send(ResponseSingleton.getInstance().response());
+    Sentry.captureException(e);
   }
 });

@@ -7,6 +7,7 @@ import chalk from "chalk";
 import AWS from "aws-sdk";
 import { downloadAndUnzip } from "../modules/saveModule";
 import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
+import * as Sentry from "@sentry/node";
 
 const ora = require("ora");
 
@@ -40,12 +41,16 @@ export async function processPlugin(
     if (e != null) {
       response.success(false);
       response.addBuildError(e);
+      Sentry.captureMessage(
+        `A download of ${request.zip.url} could not be performed`
+      );
       return cb(response.response());
     }
     if (!pluginExists()) {
       console.log(chalk.red("No plugin was found, what is happening"));
       response.success(false);
       response.addBuildError("Plugin was not provided");
+      Sentry.captureMessage(`Plugin was not provided`);
       return cb(response.response());
     }
     if (res) {
@@ -64,11 +69,13 @@ export async function processPlugin(
           return cb(response.response());
         } else {
           console.log(chalk.red("Some errors during the build"));
+          Sentry.captureMessage(`Build unsuccessful`);
           return cb(response.response());
         }
       });
     } else {
       console.log(chalk.red("Something wrong with the unzip"));
+      Sentry.captureMessage(`Could not unzip a file`);
       return cb(response.response());
     }
   });
@@ -117,6 +124,7 @@ const uploadPlugin = async (plugin: PluginRequest) => {
         if (err) {
           response.uploadSuccess(false);
           uploadSpinner.fail("Failed to upload files");
+          Sentry.captureMessage(`Coud not upload a file to AWS`);
         }
       })
       .promise();

@@ -2,7 +2,7 @@ const path = require("path");
 const webpack = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
 const remoteComponentConfig = require("./remote-component.config").resolve;
-
+const Sentry = require("@sentry/node");
 const toml = require("toml");
 const yaml = require("yamljs");
 const json5 = require("json5");
@@ -125,15 +125,19 @@ async function runBuild(plugin, onFinish) {
   const p = path.join(__dirname, "dist");
   safeDirectoryRemove(p);
 
-  compiler.run((err, stats) => {
-    if (!err) buildSpinner.succeed("Build succeed");
-    else {
-      buildSpinner.fail("Build failed");
-    }
-    compiler.close(() => {
-      onFinish(!err, stats.toJson("minimal"));
+  try {
+    compiler.run((err, stats) => {
+      if (!err) buildSpinner.succeed("Build succeed");
+      else {
+        buildSpinner.fail("Build failed");
+      }
+      compiler.close(() => {
+        onFinish(!err, stats.toJson("minimal"));
+      });
     });
-  });
+  } catch (e) {
+    Sentry.captureException(e);
+  }
 }
 
 module.exports = { runBuild };
