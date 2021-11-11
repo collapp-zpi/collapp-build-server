@@ -23,6 +23,7 @@ export function cleanup() {
 export function cleanupAfter() {
   const cleanSpinner = ora("Clean up");
   safeDirectoryRemove(path.join(__dirname, "../", "build", "plugin"));
+  safeDirectoryRemove(path.join(__dirname, "../", "build", "node_modules"));
   safeDirectoryRemove(tempPath);
   safeDirectoryRemove(path.join(__dirname, "../", "../", "dist"));
   cleanSpinner.succeed();

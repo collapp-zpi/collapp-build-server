@@ -12,6 +12,10 @@ export const excluded = [
   "sass",
   "scss",
   "serve",
+  "react-dom",
+  "react-scripts",
+  "react",
+  "classnames",
   "zip-a-folder",
   "@typescript-eslint/eslint-plugin",
   "@typescript-eslint/parser",
@@ -19,5 +23,6 @@ export const excluded = [
   "postcss",
   "pretty-quick",
   "tailwindcss",
+  "react",
   "tailwindcss-textshadow",
 ];

@@ -9,6 +9,7 @@ import { BuildResponse } from "../types/Responses";
 import { cleanup, cleanupAfter } from "../download/cleanup";
 import copyToModules from "../download/copyScriptToLocalModules";
 import uploadPlugin from "../download/uploadPlugin";
+import installPackages from "../download/installLocalPackages";
 
 const pluginPath = path.join(__dirname, "plugin");
 
@@ -29,7 +30,6 @@ export async function processPlugin(
   };
 
   console.log(chalk.blue.bold("\nBuild started"));
-  console.log(`${chalk.gray.italic(new Date())}\n`);
 
   const downloadResponse = await downloadAndUnzip(request);
 
@@ -47,7 +47,17 @@ export async function processPlugin(
     return Promise.resolve(response);
   }
 
-  // build here
+  const installResult = await installPackages(
+    path.join(__dirname, "../build", "plugin", "package.json")
+  );
+  if (!installResult) {
+    console.log("Not installed");
+    response = { ...response, success: false };
+    Sentry.captureMessage("Could not install packages");
+    cleanupAfter();
+    return Promise.resolve(response);
+  }
+
   const buildRes = await runBuild(request);
   if (!buildRes.success) {
     response = {
