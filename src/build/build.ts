@@ -1,126 +1,99 @@
-import { ResponseSingleton } from "./../utils/response";
-import { Response } from "../utils/response";
 import { runBuild } from "../../webpack";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import AWS from "aws-sdk";
-import { downloadAndUnzip } from "../modules/saveModule";
-import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
+import downloadAndUnzip from "../download/downloadAndUnzip";
+import * as Sentry from "@sentry/node";
+import { PluginRequest } from "../types/Plugin";
+import { BuildResponse } from "../types/Responses";
+import { cleanup, cleanupAfter } from "../download/cleanup";
+import copyToModules from "../download/copyScriptToLocalModules";
+import uploadPlugin from "../download/uploadPlugin";
+import installPackages from "../download/installLocalPackages";
 
-const ora = require("ora");
-
-const client = new AWS.S3({
-  accessKeyId: process.env.AWS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY,
-});
-
-export interface PluginRequest {
-  requestId: string;
-  name: string;
-  developer: {
-    name: string;
-    email: string;
-  };
-  zip: {
-    url: string;
-  };
-}
+const pluginPath = path.join(__dirname, "plugin");
 
 export async function processPlugin(
-  request: PluginRequest,
-  cb: (res: Response) => void
-) {
-  const response = ResponseSingleton.getInstance();
-  response.reset();
+  request: PluginRequest
+): Promise<BuildResponse> {
+  let response: BuildResponse = {
+    success: false,
+    build: {
+      success: false,
+      time: 0,
+      errors: [],
+    },
+    upload: {
+      success: true,
+      files: [],
+    },
+  };
 
-  console.log(chalk.blue("\nBuild started"));
-  console.log(`${chalk.gray.italic(new Date())}\n`);
-  downloadAndUnzip(request, async (res, e) => {
-    if (e != null) {
-      response.success(false);
-      response.addBuildError(e);
-      return cb(response.response());
-    }
-    if (!pluginExists()) {
-      console.log(chalk.red("No plugin was found, what is happening"));
-      response.success(false);
-      response.addBuildError("Plugin was not provided");
-      return cb(response.response());
-    }
-    if (res) {
-      runBuild(request, (succ, stats) => {
-        response.buildSuccess(succ);
-        response.setBuildTime(stats.time);
-        stats.errors.forEach((e) => {
-          response.addBuildError(JSON.stringify(e));
-        });
-        if (succ) {
-          copyToModules(request);
-          uploadPlugin(request);
-          safeDirectoryRemove(path.join(__dirname, "../../", "dist"));
-          response.success(true);
-          console.log(chalk.green.bold("\nBuild done\n\n"));
-          return cb(response.response());
-        } else {
-          console.log(chalk.red("Some errors during the build"));
-          return cb(response.response());
-        }
-      });
-    } else {
-      console.log(chalk.red("Something wrong with the unzip"));
-      return cb(response.response());
-    }
-  });
-}
+  console.log(chalk.blue.bold("\nBuild started"));
 
-const pluginExists = () => {
-  return fs.existsSync(path.join(__dirname, "plugin"));
-};
+  const downloadResponse = await downloadAndUnzip(request);
 
-const copyToModules = (plugin: PluginRequest) => {
-  const copySpinner = ora("Copy script to module").start();
-  safeDirectoryCreate(
-    path.resolve(__dirname, "../", "modules", "scripts", plugin.name)
+  if (!downloadResponse.success) {
+    response = { ...response, success: false };
+    cleanupAfter();
+    return Promise.resolve(response);
+  }
+
+  cleanup();
+  if (!fs.existsSync(pluginPath)) {
+    response = { ...response, success: false };
+    Sentry.captureMessage("Even after download, there is not plugins folder");
+    cleanupAfter();
+    return Promise.resolve(response);
+  }
+
+  const installResult = await installPackages(
+    path.join(__dirname, "../build", "plugin", "package.json")
   );
+  if (!installResult) {
+    console.log("Not installed");
+    response = { ...response, success: false };
+    Sentry.captureMessage("Could not install packages");
+    cleanupAfter();
+    return Promise.resolve(response);
+  }
 
-  fs.copyFileSync(
-    path.resolve(__dirname, "plugin", "logic", "server.js"),
-    path.resolve(
-      __dirname,
-      "../",
-      "modules",
-      "scripts",
-      plugin.name,
-      "server.js"
-    )
-  );
-
-  safeDirectoryRemove(path.join(__dirname, "plugin"));
-  copySpinner.succeed("Finished to copy script module");
-};
-
-const uploadPlugin = async (plugin: PluginRequest) => {
-  const response = ResponseSingleton.getInstance();
-  const uploadSpinner = ora("Upload files to server").start();
-  const distPath = path.resolve(__dirname, "../../", "dist");
-  const files = fs.readdirSync(distPath);
-  files.forEach((f) => response.addUploadFile(f));
-  files.forEach(async (f) => {
-    const params = {
-      Body: fs.readFileSync(path.resolve(__dirname, "../../", "dist", f)),
-      Bucket: process.env.AWS_BUCKET,
-      Key: `plugins/${plugin.name}/${f}`,
+  const buildRes = await runBuild(request);
+  if (!buildRes.success) {
+    response = {
+      ...response,
+      success: false,
+      build: {
+        success: false,
+        errors: buildRes.stats.errors,
+        time: buildRes.stats.time,
+      },
     };
-    await client
-      .upload(params, (err, data) => {
-        if (err) {
-          response.uploadSuccess(false);
-          uploadSpinner.fail("Failed to upload files");
-        }
-      })
-      .promise();
-  });
-  response.uploadSuccess(true);
-  uploadSpinner.succeed("Done uploading files to a server");
-};
+    cleanupAfter();
+    return Promise.resolve(response);
+  }
+  response = {
+    ...response,
+    build: {
+      success: true,
+      time: buildRes.stats.time,
+      errors: buildRes.stats.errors,
+    },
+  };
+
+  copyToModules(request);
+  const uploadResult = await uploadPlugin(request);
+  if (!uploadResult.success) {
+    response = { ...response, success: false, upload: uploadResult };
+    Sentry.captureMessage("Could not upload filest to AWS");
+    cleanupAfter();
+    return Promise.resolve(response);
+  }
+  cleanupAfter();
+
+  response = {
+    ...response,
+    success: true,
+  };
+  return Promise.resolve(response);
+}

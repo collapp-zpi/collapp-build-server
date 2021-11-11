@@ -5,8 +5,9 @@ import path from "path";
 import https from "https";
 import Listr from "listr";
 import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
+import * as Sentry from "@sentry/node";
+import ora from "ora";
 
-const ora = require("ora");
 const root = "scripts/";
 const rootS3 = "https://cloudfront.collapp.live/plugins/";
 
@@ -37,18 +38,22 @@ const downloadFileToLocalDirectory = async (plugin: string) => {
   safeDirectoryCreate(p);
 
   const file = fs.createWriteStream(p + "/server.js");
-  https
-    .get(rootS3 + plugin + "/server.js", (response) => {
-      response.pipe(file);
-      file.on("finish", () => {
-        file.close();
+  try {
+    https
+      .get(rootS3 + plugin + "/server.js", (response) => {
+        response.pipe(file);
+        file.on("finish", () => {
+          file.close();
+        });
+      })
+      .on("error", (err) => {
+        fs.unlink(p, () => {});
+        safeDirectoryRemove(p);
+        console.log(chalk.red(err));
       });
-    })
-    .on("error", (err) => {
-      fs.unlink(p, () => {});
-      safeDirectoryRemove(p);
-      console.log(chalk.red(err));
-    });
+  } catch (e) {
+    Sentry.captureException(e);
+  }
 };
 
 const deleteUnwanted = async (plugin: string) => {
@@ -65,51 +70,54 @@ export async function syncPlugins() {
     Prefix: "plugins",
   };
 
-  const { Contents } = await client.listObjectsV2(params).promise();
+  try {
+    const { Contents } = await client.listObjectsV2(params).promise();
+    const remotePlugins = [
+      ...new Set(
+        Contents.map((element) => element.Key.split("/")[1]).filter(
+          (f) => f.length > 0
+        )
+      ),
+    ];
 
-  const remotePlugins = [
-    ...new Set(
-      Contents.map((element) => element.Key.split("/")[1]).filter(
-        (f) => f.length > 0
-      )
-    ),
-  ];
+    let localPlugins = fs.readdirSync(path.resolve(__dirname, "./scripts/"));
 
-  let localPlugins = fs.readdirSync(path.resolve(__dirname, "./scripts/"));
+    const toDelete = setDifference(localPlugins, remotePlugins);
 
-  const toDelete = setDifference(localPlugins, remotePlugins);
+    if (toDelete.length > 0) {
+      const tasksDelete = new Listr(
+        toDelete.map((d) => ({
+          title: chalk.red.bold("Removed") + ` local version of '${d}' plugin`,
+          task: () => deleteUnwanted(d),
+        }))
+      );
+      await tasksDelete.run();
+    }
 
-  if (toDelete.length > 0) {
-    const tasksDelete = new Listr(
-      toDelete.map((d) => ({
-        title: chalk.red.bold("Removed") + ` local version of '${d}' plugin`,
-        task: () => deleteUnwanted(d),
-      }))
+    localPlugins = localPlugins.filter((local) => !toDelete.includes(local));
+
+    const emptyPlugins = localPlugins.filter((f) =>
+      isEmpty(path.resolve(__dirname, "./scripts/", f))
     );
-    await tasksDelete.run();
-  }
 
-  localPlugins = localPlugins.filter((local) => !toDelete.includes(local));
+    const toDownload = [
+      ...setDifference(remotePlugins, localPlugins),
+      ...emptyPlugins,
+    ];
 
-  const emptyPlugins = localPlugins.filter((f) =>
-    isEmpty(path.resolve(__dirname, "./scripts/", f))
-  );
-
-  const toDownload = [
-    ...setDifference(remotePlugins, localPlugins),
-    ...emptyPlugins,
-  ];
-
-  if (toDownload.length == 0 && toDelete.length == 0) {
-    spinner.succeed("All is already up to date");
-  } else {
-    const tasksDownload = new Listr(
-      toDownload.map((d) => ({
-        title: chalk.green.bold("Download ->") + ` '${d}' plugin`,
-        task: () => downloadFileToLocalDirectory(d),
-      }))
-    );
-    await tasksDownload.run();
-    spinner.succeed("Now it's all up to date");
+    if (toDownload.length == 0 && toDelete.length == 0) {
+      spinner.succeed("All is already up to date");
+    } else {
+      const tasksDownload = new Listr(
+        toDownload.map((d) => ({
+          title: chalk.green.bold("Download ->") + ` '${d}' plugin`,
+          task: () => downloadFileToLocalDirectory(d),
+        }))
+      );
+      await tasksDownload.run();
+      spinner.succeed("Now it's all up to date");
+    }
+  } catch (e) {
+    Sentry.captureException(e);
   }
 }

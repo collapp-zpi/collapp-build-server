@@ -1,8 +1,8 @@
-const path = require("path");
 const webpack = require("webpack");
+const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 const remoteComponentConfig = require("./remote-component.config").resolve;
-
+const Sentry = require("@sentry/node");
 const toml = require("toml");
 const yaml = require("yamljs");
 const json5 = require("json5");
@@ -45,7 +45,6 @@ const compiler = webpack({
     libraryTarget: "commonjs",
     filename: "entry.js",
   },
-  stats: { warnings: false },
   externals: {
     ...Object.keys(remoteComponentConfig).reduce(
       (obj, key) => ({ ...obj, [key]: key }),
@@ -118,22 +117,37 @@ const compiler = webpack({
   },
 });
 
-async function runBuild(plugin, onFinish) {
-  const buildSpinner = ora(`Build of a '${plugin.name}' plugin`).start();
+async function build() {
+  return new Promise((resolve, reject) => {
+    compiler.run((err, stats) => {
+      compiler.close(() => {
+        const errors = stats.toJson("minimal").errors.length > 0;
+        resolve({
+          success: err == null && !errors ? true : false,
+          stats: stats.toJson("minimal"),
+        });
+      });
+    });
+  });
+}
 
-  // Clear out directory
+async function runBuild(plugin) {
+  const buildSpinner = ora(`Build of a '${plugin.name}' plugin`).start();
   const p = path.join(__dirname, "dist");
   safeDirectoryRemove(p);
 
-  compiler.run((err, stats) => {
-    if (!err) buildSpinner.succeed("Build succeed");
-    else {
-      buildSpinner.fail("Build failed");
+  try {
+    const res = await build();
+    if (res.success) {
+      buildSpinner.succeed();
+    } else {
+      buildSpinner.fail();
     }
-    compiler.close(() => {
-      onFinish(!err, stats.toJson("minimal"));
-    });
-  });
+    return Promise.resolve(res);
+  } catch (e) {
+    buildSpinner.fail();
+    Sentry.captureException(e);
+  }
 }
 
 module.exports = { runBuild };
