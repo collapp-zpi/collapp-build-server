@@ -11,7 +11,8 @@
     "strict": false,
     "noImplicitAny": false,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "jsx": "react-jsx"
   },
   "exclude": ["webpack.js"],
   "files": [
@@ -22,8 +23,16 @@
     "src/ws/roomSocket.ts",
     "src/modules/loadFromRemote.ts",
     "src/modules/pluginData.ts",
-    "src/modules/saveModule.ts",
+    "src/download/downloadAndUnzip.ts",
+    "src/download/cleanup.ts",
+    "src/download/copyScriptToLocalModules.ts",
+    "src/download/uploadPlugin.ts",
     "src/config/handleError.ts",
+    "src/utils/fileUtils.ts",
+    "src/utils/response.ts",
+    "src/config/prismaClient.ts",
+    "src/download/excludedDependencies.ts",
+    "src/download/installLocalPackages.ts",
     "remote-component.config.js",
     "postcss.config.js"
   ]

@@ -13,6 +13,12 @@
   },
   "author": "",
   "license": "ISC",
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react"
+    ]
+  },
   "dependencies": {
     "@collapp/email-sdk": "^1.0.9",
     "@prisma/client": "^3.4.0",

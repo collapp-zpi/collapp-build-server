@@ -1,4 +1,4 @@
-import { PluginRequest } from "./build";
+import { PluginRequest } from "../types/Plugin";
 import { prisma } from "../config/prismaClient";
 import * as Sentry from "@sentry/node";
 

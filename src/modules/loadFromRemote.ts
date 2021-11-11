@@ -6,8 +6,8 @@ import https from "https";
 import Listr from "listr";
 import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
 import * as Sentry from "@sentry/node";
+import ora from "ora";
 
-const ora = require("ora");
 const root = "scripts/";
 const rootS3 = "https://cloudfront.collapp.live/plugins/";
 

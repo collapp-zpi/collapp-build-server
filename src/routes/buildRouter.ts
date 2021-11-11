@@ -5,7 +5,6 @@ import queue from "express-queue";
 import { ErrorEmail, SuccessEmail } from "@collapp/email-sdk";
 import axios from "axios";
 import { successBuild } from "../build/updateDB";
-import * as res from "../utils/response";
 import * as Sentry from "@sentry/node";
 export const buildRouter = Router();
 
@@ -20,32 +19,31 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
   await axios.get("https://collapp-email-microservice.herokuapp.com/");
 
   try {
-    processPlugin(req.body, async (results: res.Response) => {
-      if (results.success) {
-        const mail = new SuccessEmail(process.env.RABBIT_URL);
-        await mail.send({
-          to: req.body.developer.email,
-          subject: `Good news, '${req.body.name}' plugin was successfully build :)`,
-          secret: process.env.SECRET,
-          context: {},
-        });
-        mail.disconnect();
-        await successBuild(req.body);
-        res.status(200).send(results);
-      } else {
-        const mail = new ErrorEmail(process.env.RABBIT_URL);
-        await mail.send({
-          to: req.body.developer.email,
-          subject: `Sorry, '${req.body.name}' plugin build failed :(`,
-          secret: process.env.SECRET,
-          context: {
-            errors: results.build.errors.join(","),
-          },
-        });
-        mail.disconnect();
-        res.status(401).send(results);
-      }
-    });
+    const ret = await processPlugin(req.body);
+    if (ret.success) {
+      const mail = new SuccessEmail(process.env.RABBIT_URL);
+      await mail.send({
+        to: req.body.developer.email,
+        subject: `Good news, '${req.body.name}' plugin was successfully build :)`,
+        secret: process.env.SECRET,
+        context: {},
+      });
+      mail.disconnect();
+      // await successBuild(req.body);
+      res.status(200).send(ret);
+    } else {
+      const mail = new ErrorEmail(process.env.RABBIT_URL);
+      await mail.send({
+        to: req.body.developer.email,
+        subject: `Sorry, '${req.body.name}' plugin build failed :(`,
+        secret: process.env.SECRET,
+        context: {
+          errors: ret.build.errors.join(","),
+        },
+      });
+      mail.disconnect();
+      res.status(401).send(ret);
+    }
   } catch (e) {
     res.status(500).send(ResponseSingleton.getInstance().response());
     Sentry.captureException(e);
