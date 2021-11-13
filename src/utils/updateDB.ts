@@ -59,3 +59,25 @@ export async function successBuild(plugin: PluginRequest) {
     Sentry.captureException(e);
   }
 }
+
+export async function failBuild(plugin: PluginRequest) {
+  try {
+    const draft = await prisma.draftPlugin.findUnique({
+      where: { id: plugin.requestId },
+    });
+    const updateDraft = await prisma.draftPlugin.update({
+      where: {
+        id: plugin.requestId,
+      },
+      data: {
+        isBuilding: false,
+        isPending: false,
+      },
+    });
+    return {
+      updateDraft,
+    };
+  } catch (e) {
+    Sentry.captureException(e);
+  }
+}

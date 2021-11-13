@@ -4,7 +4,7 @@ import { processPlugin } from "../build/build";
 import queue from "express-queue";
 import { ErrorEmail, SuccessEmail } from "@collapp/email-sdk";
 import axios from "axios";
-import { successBuild } from "../build/updateDB";
+import { successBuild, failBuild } from "../utils/updateDB";
 import * as Sentry from "@sentry/node";
 export const buildRouter = Router();
 
@@ -29,7 +29,7 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         context: {},
       });
       mail.disconnect();
-      // await successBuild(req.body);
+      await successBuild(req.body);
       res.status(200).send(ret);
     } else {
       const mail = new ErrorEmail(process.env.RABBIT_URL);
@@ -42,6 +42,7 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         },
       });
       mail.disconnect();
+      await failBuild(req.body);
       res.status(401).send(ret);
     }
   } catch (e) {
