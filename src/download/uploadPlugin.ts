@@ -27,7 +27,7 @@ export default function uploadPlugin(
     const params = {
       Body: fs.readFileSync(path.resolve(__dirname, "../../dist", f)),
       Bucket: process.env.AWS_BUCKET,
-      Key: `plugins/${plugin.name}/${f}`,
+      Key: `plugins/${plugin.requestId}/${f}`,
     };
     await client
       .upload(params, (err, data) => {
