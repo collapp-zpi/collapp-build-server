@@ -85,7 +85,7 @@ export async function processPlugin(
   const uploadResult = await uploadPlugin(request);
   if (!uploadResult.success) {
     response = { ...response, success: false, upload: uploadResult };
-    Sentry.captureMessage("Could not upload filest to AWS");
+    Sentry.captureMessage("Could not upload files to AWS");
     cleanupAfter();
     return Promise.resolve(response);
   }
