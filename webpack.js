@@ -71,7 +71,30 @@ const compiler = webpack({
             loader: "css-loader",
           },
           {
-            loader: "postcss-loader",
+            loader: require.resolve("postcss-loader"),
+            options: {
+              postcssOptions: {
+                plugins: {
+                  "postcss-prefix-selector": {
+                    prefix: ".collapp",
+                    transform(prefix, selector, prefixedSelector, filepath) {
+                      if (selector.match(/^(html|body)/)) {
+                        return selector.replace(/^([^\s]*)/, `$1 ${prefix}`);
+                      }
+
+                      if (filepath.match(/node_modules/)) {
+                        return selector; // Do not prefix styles imported from node_modules
+                      }
+
+                      return prefixedSelector;
+                    },
+                  },
+                  // autoprefixer: {
+                  //   browsers: ["last 4 versions"],
+                  // },
+                },
+              },
+            },
           },
           "sass-loader",
         ],
