@@ -13,7 +13,7 @@ const rootS3 = "https://cloudfront.collapp.live/plugins/";
 
 const client = new AWS.S3({
   accessKeyId: process.env.AWS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY,
+  secretAccessKey: process.env.AWS_SECRET_KEY_COLLAPP,
 });
 
 // -----------------------------------------------------------------------------------------------------
