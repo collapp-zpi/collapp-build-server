@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/node";
-import { getPluginName, getPluginData, updatePluginData } from "./updateDB";
+import { getPluginData, updatePluginData } from "./updateDB";
 import path from "path";
 
 const scriptPath = path.join(__dirname, "../" + "modules", "scripts");
@@ -7,37 +7,52 @@ const scriptPath = path.join(__dirname, "../" + "modules", "scripts");
 export default class Room {
   async init(io, socket, room, spaceId, pluginId) {
     try {
+      // Join room for a specific SpacePlugin
       socket.join(room);
-      const pluginName = await getPluginName(pluginId);
-      const module = require(path.resolve(
-        scriptPath,
-        pluginName,
-        "server.js"
-      )).default;
+      socket.emit("room", room);
+
+      // Load methods from local module store
+      const module = loadModule(pluginId);
       const functions = Object.keys(module);
 
-      functions.forEach((f) => {
-        socket.on(f, async (data) => {
+      // Get current state and emit on init
+      const dbState = await getPluginData(spaceId, pluginId);
+      socket.emit("update", dbState);
+
+      // Allow to force pull data
+      socket.on("pull", () => {
+        io.to(room).emit("update", dbState);
+      });
+
+      // Each method from server.js
+      functions.forEach((method) => {
+        socket.on(method, async (data) => {
+          // Get recent data, process, broadcast and update DB
+
           const dataParsed = JSON.parse(data);
           const dbState = await getPluginData(spaceId, pluginId);
-          const newData = loadFunction(pluginName, f)(dbState, dataParsed);
+          const fun = loadFunction(pluginId, method);
+          const newData = (await fun(dbState, dataParsed)) || dbState;
           io.to(room).emit("update", newData);
           await updatePluginData(spaceId, pluginId, newData);
         });
       });
-      console.log("Waiting...");
     } catch (e) {
       Sentry.captureException(e);
     }
   }
 }
 
+function loadModule(pluginId: string) {
+  return require(path.resolve(scriptPath, pluginId, "server.js")).default;
+}
+
 function loadFunction(name: string, fun: string) {
-  const p = path.resolve(scriptPath, name, "server.js");
-  const module = require(p).default;
+  const module = loadModule(name);
   try {
     return module[fun];
   } catch (e) {
     Sentry.captureException(e);
+    return null;
   }
 }
