@@ -1,10 +1,36 @@
 import chalk from "chalk";
 import server from "./server";
 import { syncPlugins } from "./modules/loadFromRemote";
-import { WebSocketServer } from "ws";
-import { match } from "node-match-path";
-import { rooms, RoomSocket } from "./ws/roomSocket";
 import * as Sentry from "@sentry/node";
+import { spacePluginExists } from "./ws/updateDB";
+import { Server } from "socket.io";
+import Room from "./ws/room";
+const io = new Server();
+
+io.on("connection", async (socket) => {
+  const id = socket.handshake.query.id as string;
+  if (id == undefined) {
+    socket.emit("errors", "Id was not provided");
+    return;
+  }
+  const [spaceId, pluginId] = id.split("_");
+  const exists = await spacePluginExists(spaceId, pluginId);
+  if (!exists) {
+    socket.emit("errors", "Provided ids do not exist");
+    return;
+  }
+
+  new Room().init(io, socket, id, spaceId, pluginId);
+});
+
+io.listen(3006);
+console.log(
+  chalk.green(
+    `Server is listening on port: ${chalk.greenBright.bold(
+      "3006"
+    )} for incoming websocket messages \n`
+  )
+);
 
 try {
   server.listen(process.env.PORT, async () => {
@@ -17,20 +43,6 @@ try {
     );
 
     await syncPlugins();
-  });
-
-  const wss = new WebSocketServer({ port: 8080 });
-
-  wss.on("connection", (ws, req) => {
-    const { matches, params } = match("/board/:id", req.url);
-
-    if (!matches || !params?.id) {
-      ws.close();
-      return;
-    }
-
-    new RoomSocket().init(ws, params.id);
-    ws.send(`You have connected to a room '${params.id}'`);
   });
 } catch (e) {
   Sentry.captureException(e);
