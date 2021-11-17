@@ -17,7 +17,12 @@ const s = server.listen(process.env.PORT, async () => {
   await syncPlugins();
 });
 
-const io = new Server(s);
+const io = new Server(s, {
+  cors: {
+    origin: "https://collapp-build-server.herokuapp.com",
+    methods: ["GET", "POST"],
+  },
+});
 
 io.on("connection", async (socket) => {
   const id = socket.handshake.query.id as string;
