@@ -19,7 +19,11 @@ const s = server.listen(process.env.PORT, async () => {
 
 const io = new Server(s, {
   cors: {
-    origin: "https://collapp-build-server.herokuapp.com",
+    origin: [
+      "https://collapp-build-server.herokuapp.com",
+      "http://localhost:3002",
+      "https://collapp.live",
+    ],
     methods: ["GET", "POST"],
   },
 });
