@@ -10,6 +10,7 @@ export default class Room {
       // Join room for a specific SpacePlugin
       socket.join(room);
       socket.emit("room", room);
+      console.log("Connected " + room);
 
       // Load methods from local module store
       const module = loadModule(pluginId);

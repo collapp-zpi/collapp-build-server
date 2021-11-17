@@ -1,11 +1,23 @@
 import chalk from "chalk";
 import server from "./server";
 import { syncPlugins } from "./modules/loadFromRemote";
-import * as Sentry from "@sentry/node";
 import { spacePluginExists } from "./ws/updateDB";
 import { Server } from "socket.io";
 import Room from "./ws/room";
-const io = new Server();
+
+const s = server.listen(process.env.PORT, async () => {
+  console.log(
+    chalk.green(
+      `Server is listening on port: ${chalk.greenBright.bold(
+        process.env.PORT
+      )} for incoming HTTP requests \n`
+    )
+  );
+
+  await syncPlugins();
+});
+
+const io = new Server(s);
 
 io.on("connection", async (socket) => {
   const id = socket.handshake.query.id as string;
@@ -22,28 +34,3 @@ io.on("connection", async (socket) => {
 
   new Room().init(io, socket, id, spaceId, pluginId);
 });
-
-io.listen(3006);
-console.log(
-  chalk.green(
-    `Server is listening on port: ${chalk.greenBright.bold(
-      "3006"
-    )} for incoming websocket messages \n`
-  )
-);
-
-try {
-  server.listen(process.env.PORT, async () => {
-    console.log(
-      chalk.green(
-        `Server is listening on port: ${chalk.greenBright.bold(
-          process.env.PORT
-        )} for incoming HTTP requests \n`
-      )
-    );
-
-    await syncPlugins();
-  });
-} catch (e) {
-  Sentry.captureException(e);
-}

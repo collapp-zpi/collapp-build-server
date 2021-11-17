@@ -21,10 +21,6 @@ async function moveFiles() {
     path.resolve(buildPath, "src", "build", "index.js")
   );
   fs.copyFileSync(
-    path.resolve(__dirname, ".babelrc"),
-    path.resolve(buildPath, ".babelrc")
-  );
-  fs.copyFileSync(
     path.resolve(__dirname, "webpack.js"),
     path.resolve(buildPath, "webpack.js")
   );
