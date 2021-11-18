@@ -21,7 +21,9 @@ const io = new Server(s, {
   cors: {
     origin: [
       "https://collapp-build-server.herokuapp.com",
+      "https://collapp-build-server.herokuapp.com/socket.io/",
       "http://localhost:3002",
+      "http://localhost:3000",
       "https://collapp.live",
     ],
     methods: ["GET", "POST"],
