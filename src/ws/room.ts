@@ -15,6 +15,7 @@ export default class Room {
       // Load methods from local module store
       const module = loadModule(pluginId);
       const functions = Object.keys(module);
+      socket.to(room).emit("functions", functions);
 
       // Get current state and emit on init
       const dbState = await getPluginData(spaceId, pluginId);
