@@ -9,17 +9,17 @@ export default class Room {
     try {
       // Join room for a specific SpacePlugin
       socket.join(room);
-      socket.emit("room", room);
+      io.to(room).emit("room", room);
       console.log("Connected " + room);
 
       // Load methods from local module store
       const module = loadModule(pluginId);
       const functions = Object.keys(module);
-      socket.to(room).emit("functions", functions);
+      io.to(room).emit("functions", functions);
 
       // Get current state and emit on init
       const dbState = await getPluginData(spaceId, pluginId);
-      socket.emit("update", dbState);
+      io.to(room).emit("update", dbState);
 
       // Allow to force pull data
       socket.on("pull", () => {
