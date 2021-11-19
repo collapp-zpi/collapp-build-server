@@ -71,22 +71,7 @@ const compiler = webpack({
             loader: "css-loader",
           },
           {
-            loader: require.resolve("postcss-loader"),
-            options: {
-              postcssOptions: {
-                plugins: {
-                  "postcss-prefix-selector": {
-                    prefix: ".collapp",
-                    transform(prefix, selector, prefixedSelector, filepath) {
-                      if (filepath.match(/node_modules/)) {
-                        return selector; // Do not prefix styles imported from node_modules
-                      }
-                      return prefixedSelector;
-                    },
-                  },
-                },
-              },
-            },
+            loader: "postcss-loader",
           },
           "sass-loader",
         ],
@@ -137,6 +122,7 @@ async function build() {
     compiler.run((err, stats) => {
       compiler.close(() => {
         const errors = stats.toJson("minimal").errors.length > 0;
+        console.log(stats.toJson("minimal"));
         resolve({
           success: err == null && !errors ? true : false,
           stats: stats.toJson("minimal"),
