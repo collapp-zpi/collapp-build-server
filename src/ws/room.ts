@@ -33,23 +33,23 @@ export default class Room {
           socket.on(method, async (data) => {
             // Get recent data, process, broadcast and update DB
 
-            const dataParsed = JSON.parse(data);
+            console.log(chalk.green(method) + " " + JSON.stringify(data));
             const dbState = await getPluginData(spaceId, pluginId);
             const fun = loadFunction(pluginId, method);
-            const newData = (await fun(dbState, dataParsed)) || dbState;
-            io.to(room).emit("update", newData);
+            const newData = (await fun(dbState, data)) || dbState;
             await updatePluginData(spaceId, pluginId, newData);
+            io.to(room).emit("update", newData);
           });
         });
       } else {
         console.log(chalk.red("No module was found"));
-        socket.emit("error", "No module was found");
+        socket.emit("errors", "No module was found");
       }
       socket.on("pull", () => {
         socket.emit("update", dbState);
       });
 
-      socket.on("updata", (data) => {
+      socket.on("update", (data) => {
         console.log(`Update: ${data}`);
       });
     } catch (e) {
