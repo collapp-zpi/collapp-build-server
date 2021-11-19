@@ -13,7 +13,14 @@ export default function copyToModules(plugin: PluginRequest) {
 
   fs.copyFileSync(
     path.join(__dirname, "../", "build", "plugin", "logic", "server.js"),
-    path.join(__dirname, "../", "modules", "scripts", plugin.name, "server.js")
+    path.join(
+      __dirname,
+      "../",
+      "modules",
+      "scripts",
+      plugin.requestId,
+      "server.js"
+    )
   );
 
   copySpinner.succeed();
