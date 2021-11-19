@@ -34,6 +34,8 @@
     "src/config/prismaClient.ts",
     "src/download/excludedDependencies.ts",
     "src/download/installLocalPackages.ts",
+    "src/build/build.ts",
+    "src/build/core/useWebsockets.ts",
     "remote-component.config.js",
     "postcss.config.js"
   ]
