@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/node";
 import { getPluginData, updatePluginData } from "./updateDB";
 import path from "path";
+import fs from "fs-extra";
+import chalk from "chalk";
 
 const scriptPath = path.join(__dirname, "../" + "modules", "scripts");
 
@@ -12,38 +14,43 @@ export default class Room {
       socket.emit("room", room);
       console.log("Connected " + room);
 
-      // Load methods from local module store
-      const module = loadModule(pluginId);
-      const functions = Object.keys(module);
-      socket.emit("functions", functions);
-
       // Get current state and emit on init
       const dbState = await getPluginData(spaceId, pluginId);
       console.log(`Current state: ${JSON.stringify(dbState)}`);
-      console.log(`Functions: ${functions}`);
       socket.emit("update", dbState);
 
-      // Allow to force pull data
+      // Load methods from local module store
+      const module = loadModule(pluginId);
+      if (module != null && module !== {}) {
+        console.log("Module: " + module);
+        const functions = Object.keys(module);
+
+        socket.emit("functions", functions);
+        console.log(`Functions: ${functions}`);
+
+        // Each method from server.js
+        functions.forEach((method) => {
+          socket.on(method, async (data) => {
+            // Get recent data, process, broadcast and update DB
+
+            const dataParsed = JSON.parse(data);
+            const dbState = await getPluginData(spaceId, pluginId);
+            const fun = loadFunction(pluginId, method);
+            const newData = (await fun(dbState, dataParsed)) || dbState;
+            io.to(room).emit("update", newData);
+            await updatePluginData(spaceId, pluginId, newData);
+          });
+        });
+      } else {
+        console.log(chalk.red("No module was found"));
+        socket.emit("error", "No module was found");
+      }
       socket.on("pull", () => {
         socket.emit("update", dbState);
       });
 
       socket.on("updata", (data) => {
         console.log(`Update: ${data}`);
-      });
-
-      // Each method from server.js
-      functions.forEach((method) => {
-        socket.on(method, async (data) => {
-          // Get recent data, process, broadcast and update DB
-
-          const dataParsed = JSON.parse(data);
-          const dbState = await getPluginData(spaceId, pluginId);
-          const fun = loadFunction(pluginId, method);
-          const newData = (await fun(dbState, dataParsed)) || dbState;
-          io.to(room).emit("update", newData);
-          await updatePluginData(spaceId, pluginId, newData);
-        });
       });
     } catch (e) {
       Sentry.captureException(e);
@@ -52,7 +59,13 @@ export default class Room {
 }
 
 function loadModule(pluginId: string) {
-  return require(path.resolve(scriptPath, pluginId, "server.js")).default;
+  console.log("Module path: " + path.join(scriptPath, pluginId, "server.js"));
+  if (fs.existsSync(path.join(scriptPath, pluginId, "server.js"))) {
+    return require(path.join(scriptPath, pluginId, "server.js")).default;
+  } else {
+    console.log(chalk.red("Module not found"));
+    return null;
+  }
 }
 
 function loadFunction(name: string, fun: string) {

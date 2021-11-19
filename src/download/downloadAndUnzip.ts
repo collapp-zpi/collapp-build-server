@@ -78,8 +78,8 @@ async function validateHash(): Promise<Boolean> {
   try {
     await extract(tempPath + "/plugin.zip", { dir: tempPath });
 
-    const hash = await hashElement(path.resolve(__dirname, "temp"), options);
-    const hashRead = fs.readFileSync(path.resolve(tempPath, "hash.json"));
+    const hash = await hashElement(path.join(__dirname, "temp"), options);
+    const hashRead = fs.readFileSync(path.join(tempPath, "hash.json"));
     const hashObject = JSON.parse(hashRead);
 
     if (hash.hash == hashObject.hash) {

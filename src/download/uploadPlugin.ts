@@ -20,12 +20,12 @@ export default function uploadPlugin(
   };
 
   const uploadSpinner = ora("Upload files to a server").start();
-  const distPath = path.resolve(__dirname, "../../dist");
+  const distPath = path.join(__dirname, "../../dist");
   const files = fs.readdirSync(distPath);
   files.forEach(async (f) => {
     response.files.push(f);
     const params = {
-      Body: fs.readFileSync(path.resolve(__dirname, "../../dist", f)),
+      Body: fs.readFileSync(path.join(__dirname, "../../dist", f)),
       Bucket: process.env.AWS_BUCKET,
       Key: `plugins/${plugin.requestId}/${f}`,
     };

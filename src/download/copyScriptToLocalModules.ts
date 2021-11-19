@@ -8,19 +8,12 @@ export default function copyToModules(plugin: PluginRequest) {
   const copySpinner = ora("Copy script to local modules").start();
 
   safeDirectoryCreate(
-    path.resolve(__dirname, "../", "modules", "scripts", plugin.name)
+    path.join(__dirname, "../", "modules", "scripts", plugin.name)
   );
 
   fs.copyFileSync(
-    path.resolve(__dirname, "../", "build", "plugin", "logic", "server.js"),
-    path.resolve(
-      __dirname,
-      "../",
-      "modules",
-      "scripts",
-      plugin.name,
-      "server.js"
-    )
+    path.join(__dirname, "../", "build", "plugin", "logic", "server.js"),
+    path.join(__dirname, "../", "modules", "scripts", plugin.name, "server.js")
   );
 
   copySpinner.succeed();

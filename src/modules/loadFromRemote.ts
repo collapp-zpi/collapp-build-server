@@ -8,7 +8,7 @@ import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
 import * as Sentry from "@sentry/node";
 import ora from "ora";
 
-const root = "scripts/";
+const root = "scripts";
 const rootS3 = "https://cloudfront.collapp.live/plugins/";
 
 const client = new AWS.S3({
@@ -37,7 +37,7 @@ const downloadFileToLocalDirectory = async (plugin: string) => {
   // Create new local version of plugin
   safeDirectoryCreate(p);
 
-  const file = fs.createWriteStream(p + "/server.js");
+  const file = fs.createWriteStream(path.join(p, "server.js"));
   try {
     https
       .get(rootS3 + plugin + "/server.js", (response) => {
@@ -57,13 +57,13 @@ const downloadFileToLocalDirectory = async (plugin: string) => {
 };
 
 const deleteUnwanted = async (plugin: string) => {
-  safeDirectoryRemove(path.resolve(__dirname, root, plugin));
+  safeDirectoryRemove(path.join(__dirname, root, plugin));
 };
 
 export async function syncPlugins() {
   const spinner = ora("Loading remote modules\n").start();
 
-  safeDirectoryCreate(path.resolve(__dirname, root));
+  safeDirectoryCreate(path.join(__dirname, root));
 
   const params = {
     Bucket: process.env.AWS_BUCKET,
@@ -80,7 +80,7 @@ export async function syncPlugins() {
       ),
     ];
 
-    let localPlugins = fs.readdirSync(path.resolve(__dirname, "./scripts/"));
+    let localPlugins = fs.readdirSync(path.join(__dirname, "scripts"));
 
     const toDelete = setDifference(localPlugins, remotePlugins);
 
@@ -97,7 +97,7 @@ export async function syncPlugins() {
     localPlugins = localPlugins.filter((local) => !toDelete.includes(local));
 
     const emptyPlugins = localPlugins.filter((f) =>
-      isEmpty(path.resolve(__dirname, "./scripts/", f))
+      isEmpty(path.join(__dirname, "scripts", f))
     );
 
     const toDownload = [

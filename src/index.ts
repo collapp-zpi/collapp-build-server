@@ -4,6 +4,8 @@ import { syncPlugins } from "./modules/loadFromRemote";
 import { spacePluginExists } from "./ws/updateDB";
 import { Server } from "socket.io";
 import Room from "./ws/room";
+import fs from "fs-extra";
+import path from "path";
 
 const s = server.listen(process.env.PORT, async () => {
   console.log(
@@ -41,6 +43,17 @@ io.on("connection", async (socket) => {
   if (!exists) {
     socket.emit("errors", "Provided ids do not exist");
     return;
+  }
+
+  const scripts = path.join(__dirname, "modules", "scripts");
+  console.log("Scripts: " + scripts);
+  if (fs.existsSync(scripts)) {
+    console.log("Scripts exists");
+    fs.readdir(scripts, (err, files) => {
+      console.log("Files: " + files);
+    });
+  } else {
+    console.log(chalk.red("No script folder"));
   }
 
   new Room().init(io, socket, id, spaceId, pluginId);

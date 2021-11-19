@@ -21,7 +21,7 @@ const compiler = webpack({
     new CopyPlugin({
       patterns: [
         {
-          from: path.resolve(
+          from: path.join(
             __dirname,
             "src",
             "build",
@@ -29,7 +29,7 @@ const compiler = webpack({
             "logic",
             "server.js"
           ),
-          to: path.resolve(__dirname, "dist", "server.js"),
+          to: path.join(__dirname, "dist", "server.js"),
         },
       ],
       options: {
@@ -38,10 +38,10 @@ const compiler = webpack({
     }),
   ],
   entry: {
-    main: path.resolve(__dirname, "src", "build", "index.js"),
+    main: path.join(__dirname, "src", "build", "index.js"),
   },
   output: {
-    path: path.resolve(__dirname, "dist"),
+    path: path.join(__dirname, "dist"),
     libraryTarget: "commonjs",
     filename: "entry.js",
   },
