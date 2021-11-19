@@ -62,9 +62,14 @@ function loadModule(pluginId: string) {
   console.log("Module path: " + path.join(scriptPath, pluginId, "server.js"));
   if (fs.existsSync(path.join(scriptPath, pluginId, "server.js"))) {
     console.log("Exists");
-    const mod = require(path.join(scriptPath, pluginId, "server.js"));
-    console.log("Module: " + mod);
-    return mod.default;
+    try {
+      const mod = require(path.join(scriptPath, pluginId, "server.js"));
+      console.log("Module: " + mod);
+      return mod.default;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
   } else {
     console.log(chalk.red("Module not found"));
     return null;
