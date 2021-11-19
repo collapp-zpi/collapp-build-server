@@ -27,6 +27,8 @@ const io = new Server(s, {
       "http://localhost:3002",
       "http://localhost:3000",
       "https://collapp.live",
+      "https://www.collapp.live",
+      "*",
     ],
     methods: ["GET", "POST"],
   },
