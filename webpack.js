@@ -80,6 +80,14 @@ const compiler = webpack({
             loader: "postcss-loader",
           },
           "sass-loader",
+          {
+            loader: "prefix-css-loader",
+            options: {
+              selector: ".my-class",
+              exclude: null,
+              minify: false,
+            },
+          },
         ],
       },
       {
