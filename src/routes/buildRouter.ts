@@ -2,7 +2,7 @@ import { ResponseSingleton } from "./../utils/response";
 import { Router, Response, Request } from "express";
 import { processPlugin } from "../build/build";
 import queue from "express-queue";
-import { ErrorEmail, SuccessEmail } from "@collapp/email-sdk";
+import { SuccessEmail, ErrorEmail } from "@collapp/email-sdk";
 import axios from "axios";
 import { successBuild, failBuild } from "../utils/updateDB";
 import * as Sentry from "@sentry/node";
@@ -26,7 +26,12 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         to: req.body.developer.email,
         subject: `Good news, '${req.body.name}' plugin was successfully build :)`,
         secret: process.env.SECRET,
-        context: {},
+        context: {
+          layout: false,
+          name: req.body.developer.name,
+          plugin: req.body.name,
+          url: req.body.zip.url,
+        },
       });
       mail.disconnect();
       await successBuild(req.body);
@@ -39,6 +44,9 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         secret: process.env.SECRET,
         context: {
           errors: ret.build.errors.join(","),
+          name: req.body.developer.name,
+          plugin: req.body.name,
+          url: req.body.zip.url,
         },
       });
       mail.disconnect();
