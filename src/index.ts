@@ -47,16 +47,5 @@ io.on("connection", async (socket) => {
     return;
   }
 
-  const scripts = path.join(__dirname, "modules", "scripts");
-  console.log("Scripts: " + scripts);
-  if (fs.existsSync(scripts)) {
-    console.log("Scripts exists");
-    fs.readdir(scripts, (err, files) => {
-      console.log("Files: " + files);
-    });
-  } else {
-    console.log(chalk.red("No script folder"));
-  }
-
   new Room().init(io, socket, id, spaceId, pluginId);
 });
