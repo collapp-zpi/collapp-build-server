@@ -11,18 +11,18 @@ export async function successBuild(plugin: PluginRequest) {
       data: {
         isBuilding: false,
         isPending: false,
-        logs: {
-          create: [{ content: "Build success" }],
-        },
+        // logs: {
+        //   create: [{ content: "Build success" }],
+        // },
       },
     });
     const draft = await prisma.draftPlugin.findUnique({
       where: { id: plugin.requestId },
       include: { source: true },
     });
-    await prisma.file.delete({
-      where: { publishedId: plugin.requestId },
-    });
+    // await prisma.file.delete({
+    //   where: { publishedId: plugin.requestId },
+    // });
     const updatePublished = await prisma.publishedPlugin.upsert({
       where: {
         id: plugin.requestId,
