@@ -27,7 +27,6 @@ buildRouter.post("/build", async (req: Request, res: Response) => {
         subject: `Good news, '${req.body.name}' plugin was successfully build :)`,
         secret: process.env.SECRET,
         context: {
-          layout: false,
           name: req.body.developer.name,
           plugin: req.body.name,
           url: req.body.zip.url,
