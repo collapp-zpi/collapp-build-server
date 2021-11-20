@@ -77,17 +77,30 @@ const compiler = webpack({
             loader: "css-loader",
           },
           {
-            loader: "postcss-loader",
-          },
-          "sass-loader",
-          {
-            loader: "prefix-css-loader",
+            loader: require.resolve("postcss-loader"),
             options: {
-              selector: ".my-class",
-              exclude: null,
-              minify: false,
+              postcssOptions: {
+                plugins: {
+                  "postcss-prefix-selector": {
+                    prefix: ".my-prefix",
+                    transform(prefix, selector, prefixedSelector, filepath) {
+                      if (selector.match(/^(html|body)/)) {
+                        return selector.replace(/^([^\s]*)/, `$1 ${prefix}`);
+                      }
+
+                      if (filepath.match(/node_modules/)) {
+                        return selector; // Do not prefix styles imported from node_modules
+                      }
+
+                      return prefixedSelector;
+                    },
+                  },
+                  autoprefixer: {},
+                },
+              },
             },
           },
+          "sass-loader",
         ],
       },
       {
