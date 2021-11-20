@@ -1,6 +1,7 @@
 const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const remoteComponentConfig = require("./remote-component.config").resolve;
 const Sentry = require("@sentry/node");
 const toml = require("toml");
@@ -36,6 +37,10 @@ const compiler = webpack({
         concurrency: 100,
       },
     }),
+    new MiniCssExtractPlugin({
+      filename: "styles.css",
+      chunkFilename: "styles.css",
+    }),
   ],
   entry: {
     main: path.join(__dirname, "src", "build", "index.js"),
@@ -64,9 +69,10 @@ const compiler = webpack({
       {
         test: /\.(sa|sc|c)ss$/,
         use: [
-          {
-            loader: "style-loader",
-          },
+          MiniCssExtractPlugin.loader,
+          // {
+          //   loader: "style-loader",
+          // },
           {
             loader: "css-loader",
           },
