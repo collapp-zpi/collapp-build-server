@@ -12,7 +12,7 @@ export async function successBuild(plugin: PluginRequest) {
         isBuilding: false,
         isPending: false,
         logs: {
-          create: [{ content: 'Build success' }],
+          create: [{ content: "Build success" }],
         },
       },
     });
@@ -21,8 +21,8 @@ export async function successBuild(plugin: PluginRequest) {
       include: { source: true },
     });
     await prisma.file.delete({
-      where: { publishedId: plugin.requestId }
-    })
+      where: { publishedId: plugin.requestId },
+    });
     const updatePublished = await prisma.publishedPlugin.upsert({
       where: {
         id: plugin.requestId,
@@ -75,9 +75,9 @@ export async function failBuild(plugin: PluginRequest) {
       data: {
         isBuilding: false,
         isPending: false,
-        logs: {
-          create: [{ content: 'Build error' }],
-        },
+        // logs: {
+        //   create: [{ content: 'Build error' }],
+        // },
       },
     });
     return {
