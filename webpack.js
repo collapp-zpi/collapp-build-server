@@ -38,10 +38,10 @@ async function build(id) {
           concurrency: 100,
         },
       }),
-      new MiniCssExtractPlugin({
-        filename: "styles.css",
-        chunkFilename: "styles.css",
-      }),
+      // new MiniCssExtractPlugin({
+      //   filename: "styles.css",
+      //   chunkFilename: "styles.css",
+      // }),
     ],
     entry: {
       main: path.join(__dirname, "src", "build", "index.js"),
@@ -70,10 +70,10 @@ async function build(id) {
         {
           test: /\.(sa|sc|c)ss$/,
           use: [
-            MiniCssExtractPlugin.loader,
-            // {
-            //   loader: "style-loader",
-            // },
+            // MiniCssExtractPlugin.loader,
+            {
+              loader: "style-loader",
+            },
             {
               loader: "css-loader",
             },
