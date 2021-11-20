@@ -11,12 +11,18 @@ export async function successBuild(plugin: PluginRequest) {
       data: {
         isBuilding: false,
         isPending: false,
+        logs: {
+          create: [{ content: 'Build success' }],
+        },
       },
     });
     const draft = await prisma.draftPlugin.findUnique({
       where: { id: plugin.requestId },
       include: { source: true },
     });
+    await prisma.file.delete({
+      where: { publishedId: plugin.requestId }
+    })
     const updatePublished = await prisma.publishedPlugin.upsert({
       where: {
         id: plugin.requestId,
@@ -62,9 +68,6 @@ export async function successBuild(plugin: PluginRequest) {
 
 export async function failBuild(plugin: PluginRequest) {
   try {
-    const draft = await prisma.draftPlugin.findUnique({
-      where: { id: plugin.requestId },
-    });
     const updateDraft = await prisma.draftPlugin.update({
       where: {
         id: plugin.requestId,
@@ -72,6 +75,9 @@ export async function failBuild(plugin: PluginRequest) {
       data: {
         isBuilding: false,
         isPending: false,
+        logs: {
+          create: [{ content: 'Build error' }],
+        },
       },
     });
     return {
