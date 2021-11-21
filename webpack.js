@@ -81,7 +81,7 @@ async function build(id) {
               loader: "sass-loader",
             },
             {
-              loader: require.resolve("postcss-loader"),
+              loader: "postcss-sass-loader",
               options: {
                 postcssOptions: {
                   plugins: {
