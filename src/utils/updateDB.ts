@@ -18,11 +18,20 @@ export async function successBuild(plugin: PluginRequest) {
     });
     const draft = await prisma.draftPlugin.findUnique({
       where: { id: plugin.requestId },
-      include: { source: true },
+      include: {
+        source: true,
+        published: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
-    await prisma.file.delete({
-      where: { publishedId: plugin.requestId }
-    })
+    if (draft?.published) {
+      await prisma.file.delete({
+        where: { publishedId: plugin.requestId }
+      })
+    }
     const updatePublished = await prisma.publishedPlugin.upsert({
       where: {
         id: plugin.requestId,
