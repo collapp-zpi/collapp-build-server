@@ -7,6 +7,7 @@
     "start": "node out/src/index.js",
     "dev": "doppler run --command=\"npm run run\"",
     "run": "ts-node-dev src/index.ts",
+    "test": "jest --collect-coverage",
     "build": "rimraf ./out && cross-env NODE_ENV=development tsc && run-func ./moveFiles.cjs moveFiles",
     "prisma-push": "git subtree push --prefix=prisma https://github.com/collapp-zpi/prisma main",
     "prisma-pull": "git subtree pull --prefix=prisma https://github.com/collapp-zpi/prisma main"
@@ -20,6 +21,7 @@
     ]
   },
   "dependencies": {
+    "@babel/preset-typescript": "^7.16.0",
     "@collapp/email-sdk": "^2.0.0",
     "@prisma/client": "^3.4.0",
     "@sentry/node": "^6.14.1",
@@ -50,6 +52,7 @@
     "helmet": "^4.6.0",
     "listr": "^0.14.3",
     "lmify": "^0.3.0",
+    "memfs": "^3.3.0",
     "node-match-path": "^0.6.3",
     "npm-programmatic": "0.0.12",
     "ora": "^5.4.1",
@@ -104,6 +107,7 @@
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.26.1",
+    "jest": "^27.3.1",
     "json5": "^2.2.0",
     "mini-css-extract-plugin": "^2.4.5",
     "node-sass": "^6.0.1",
