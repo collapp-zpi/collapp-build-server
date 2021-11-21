@@ -53,7 +53,6 @@ export default class Room {
 }
 
 function loadModule(pluginId: string) {
-  console.log("Module path: " + path.join(scriptPath, pluginId, "server.js"));
   if (fs.existsSync(path.join(scriptPath, pluginId, "server.js"))) {
     try {
       const mod = require(path.join(scriptPath, pluginId, "server.js"));
