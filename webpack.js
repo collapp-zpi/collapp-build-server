@@ -115,7 +115,7 @@ async function build(id) {
               options: {
                 postcssOptions: {
                   plugins: {
-                    "postcss-prefix-selector": {
+                    "postcss-sass-prefix-selector": {
                       prefix: `.${id}`,
                       transform(prefix, selector, prefixedSelector, filepath) {
                         if (filepath.match(/node_modules/)) {
