@@ -78,6 +78,9 @@ async function build(id) {
               loader: "css-loader",
             },
             {
+              loader: "sass-loader",
+            },
+            {
               loader: require.resolve("postcss-loader"),
               options: {
                 postcssOptions: {
@@ -96,7 +99,6 @@ async function build(id) {
                 },
               },
             },
-            "sass-loader",
           ],
         },
         {
