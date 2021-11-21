@@ -16,24 +16,19 @@ export default class Room {
 
       // Get current state and emit on init
       const dbState = await getPluginData(spaceId, pluginId);
-      console.log(`Current state: ${JSON.stringify(dbState)}`);
       socket.emit("update", dbState);
 
       // Load methods from local module store
       const module = loadModule(pluginId);
       if (module != null && module !== {}) {
-        console.log("Module: " + module);
         const functions = Object.keys(module);
-
         socket.emit("functions", functions);
-        console.log(`Functions: ${functions}`);
 
         // Each method from server.js
         functions.forEach((method) => {
           socket.on(method, async (data) => {
             // Get recent data, process, broadcast and update DB
 
-            console.log(chalk.green(method) + " " + JSON.stringify(data));
             const dbState = await getPluginData(spaceId, pluginId);
             const fun = loadFunction(pluginId, method);
             const newData = (await fun(dbState, data)) || dbState;
@@ -42,7 +37,6 @@ export default class Room {
           });
         });
       } else {
-        console.log(chalk.red("No module was found"));
         socket.emit("errors", "No module was found");
       }
       socket.on("pull", () => {
@@ -61,10 +55,8 @@ export default class Room {
 function loadModule(pluginId: string) {
   console.log("Module path: " + path.join(scriptPath, pluginId, "server.js"));
   if (fs.existsSync(path.join(scriptPath, pluginId, "server.js"))) {
-    console.log("Exists");
     try {
       const mod = require(path.join(scriptPath, pluginId, "server.js"));
-      console.log("Module: " + mod);
       return mod.default;
     } catch (e) {
       console.log(e);

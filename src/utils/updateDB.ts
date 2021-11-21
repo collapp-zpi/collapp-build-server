@@ -11,9 +11,9 @@ export async function successBuild(plugin: PluginRequest) {
       data: {
         isBuilding: false,
         isPending: false,
-        logs: {
-          create: [{ content: 'Build success' }],
-        },
+        // logs: {
+        //   create: [{ content: "Build success" }],
+        // },
       },
     });
     const draft = await prisma.draftPlugin.findUnique({
@@ -84,9 +84,9 @@ export async function failBuild(plugin: PluginRequest) {
       data: {
         isBuilding: false,
         isPending: false,
-        logs: {
-          create: [{ content: 'Build error' }],
-        },
+        // logs: {
+        //   create: [{ content: 'Build error' }],
+        // },
       },
     });
     return {
