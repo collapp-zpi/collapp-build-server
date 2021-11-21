@@ -4,6 +4,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const remoteComponentConfig = require("./remote-component.config").resolve;
 const Sentry = require("@sentry/node");
+const prefixer = require("postcss-root-prefixer");
 const toml = require("toml");
 const yaml = require("yamljs");
 const json5 = require("json5");
@@ -68,39 +69,8 @@ async function build(id) {
           },
         },
         {
-          test: /\.css$/,
+          test: /\.(sa|sc|c)ss$/,
           use: [
-            {
-              loader: "style-loader",
-            },
-            {
-              loader: "css-loader",
-            },
-            {
-              loader: "postcss-loader",
-              options: {
-                postcssOptions: {
-                  plugins: {
-                    "postcss-prefix-selector": {
-                      prefix: `.${id}`,
-                      transform(prefix, selector, prefixedSelector, filepath) {
-                        if (filepath.match(/node_modules/)) {
-                          return selector;
-                        }
-                        return prefixedSelector;
-                      },
-                    },
-                    autoprefixer: {},
-                  },
-                },
-              },
-            },
-          ],
-        },
-        {
-          test: /\.(sa|sc)ss$/,
-          use: [
-            // MiniCssExtractPlugin.loader,
             {
               loader: "style-loader",
             },
@@ -111,26 +81,48 @@ async function build(id) {
               loader: "sass-loader",
             },
             {
-              loader: "postcss-sass-loader",
+              loader: require.resolve("postcss-loader"),
               options: {
-                postcssOptions: {
-                  plugins: {
-                    "postcss-sass-prefix-selector": {
-                      prefix: `.${id}`,
-                      transform(prefix, selector, prefixedSelector, filepath) {
-                        if (filepath.match(/node_modules/)) {
-                          return selector;
-                        }
-                        return prefixedSelector;
-                      },
-                    },
-                    autoprefixer: {},
-                  },
-                },
+                ident: "postcss",
+                plugins: () => [prefixer({ prefix: `.${id}` })],
               },
             },
           ],
         },
+        // {
+        //   test: /\.(sa|sc|c)ss$/,
+        //   use: [
+        //     // MiniCssExtractPlugin.loader,
+        //     {
+        //       loader: "style-loader",
+        //     },
+        //     {
+        //       loader: "css-loader",
+        //     },
+        //     {
+        //       loader: "sass-loader",
+        //     },
+        //     {
+        //       loader: "postcss-sass-loader",
+        //       options: {
+        //         postcssOptions: {
+        //           plugins: {
+        //             "postcss-sass-prefix-selector": {
+        //               prefix: `.${id}`,
+        //               transform(prefix, selector, prefixedSelector, filepath) {
+        //                 if (filepath.match(/node_modules/)) {
+        //                   return selector;
+        //                 }
+        //                 return prefixedSelector;
+        //               },
+        //             },
+        //             autoprefixer: {},
+        //           },
+        //         },
+        //       },
+        //     },
+        //   ],
+        // },
         {
           test: /\.(png|svg|jpg|gif)$/,
           use: ["file-loader"],
