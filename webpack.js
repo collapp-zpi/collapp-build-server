@@ -105,6 +105,9 @@ async function build(id) {
               loader: "style-loader",
             },
             {
+              loader: "css-loader",
+            },
+            {
               loader: "sass-loader",
             },
             {
