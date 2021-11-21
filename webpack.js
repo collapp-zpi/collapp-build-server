@@ -53,6 +53,18 @@ async function build(id) {
       ),
       "remote-component.config.js": "remote-component.config.js",
     },
+    resolve: {
+      extensions: [
+        ".js",
+        ".jsx",
+        ".png",
+        ".jpg",
+        ".ts",
+        ".tsx",
+        ".json",
+        ".svg",
+      ],
+    },
     module: {
       rules: [
         {
