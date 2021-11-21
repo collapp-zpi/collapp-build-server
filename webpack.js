@@ -80,11 +80,24 @@ async function build(id) {
             {
               loader: "sass-loader",
             },
+            // {
+            //   loader: require.resolve("postcss-loader"),
+            //   options: {
+            //     ident: "postcss",
+            //     plugins: () => [prefixer({ prefix: `.${id}` })],
+            //   },
+            // },
             {
-              loader: require.resolve("postcss-loader"),
+              loader: "postcss-loader",
               options: {
-                ident: "postcss",
-                plugins: () => [prefixer({ prefix: `.${id}` })],
+                postcssOptions: {
+                  plugins: {
+                    "postcss-root-prefixer": {
+                      prefix: `.${id}`,
+                    },
+                    autoprefixer: {},
+                  },
+                },
               },
             },
           ],
