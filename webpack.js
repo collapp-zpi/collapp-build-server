@@ -68,14 +68,41 @@ async function build(id) {
           },
         },
         {
-          test: /\.(sa|sc|c)ss$/,
+          test: /\.css$/,
           use: [
-            // MiniCssExtractPlugin.loader,
             {
               loader: "style-loader",
             },
             {
               loader: "css-loader",
+            },
+            {
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: {
+                    "postcss-prefix-selector": {
+                      prefix: `.${id}`,
+                      transform(prefix, selector, prefixedSelector, filepath) {
+                        if (filepath.match(/node_modules/)) {
+                          return selector;
+                        }
+                        return prefixedSelector;
+                      },
+                    },
+                    autoprefixer: {},
+                  },
+                },
+              },
+            },
+          ],
+        },
+        {
+          test: /\.(sa|sc)ss$/,
+          use: [
+            // MiniCssExtractPlugin.loader,
+            {
+              loader: "style-loader",
             },
             {
               loader: "sass-loader",
