@@ -76,11 +76,30 @@ async function build(id) {
               loader: "sass-loader",
             },
             {
-              loader: require.resolve("postcss-loader"),
+              loader: "postcss-loader",
               options: {
                 postcssOptions: {
                   plugins: {
                     "postcss-prefix-selector": {
+                      prefix: `.${id}`,
+                      transform(prefix, selector, prefixedSelector, filepath) {
+                        if (filepath.match(/node_modules/)) {
+                          return selector;
+                        }
+                        return prefixedSelector;
+                      },
+                    },
+                    autoprefixer: {},
+                  },
+                },
+              },
+            },
+            {
+              loader: "postcss-sass-loader",
+              options: {
+                postcssOptions: {
+                  plugins: {
+                    "postcss-sass-prefix-selector": {
                       prefix: `.${id}`,
                       transform(prefix, selector, prefixedSelector, filepath) {
                         if (filepath.match(/node_modules/)) {
