@@ -5,3 +5,5 @@ package-lock.json
 out
 src/modules/scripts
 coverage
+.env
+.idea
