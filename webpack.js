@@ -72,6 +72,9 @@ async function build(id) {
           exclude: /(node_modules|bower_components)/,
           use: {
             loader: "babel-loader",
+            options: {
+              presets: ["@babel/preset-env", "@babel/preset-flow", "@babel/preset-react", "@babel/preset-typescript"]
+            }
           },
         },
         {

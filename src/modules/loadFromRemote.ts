@@ -1,5 +1,4 @@
 import chalk from "chalk";
-import AWS from "aws-sdk";
 import fs from "fs";
 import path from "path";
 import https from "https";
@@ -7,14 +6,9 @@ import Listr from "listr";
 import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
 import * as Sentry from "@sentry/node";
 import ora from "ora";
+import { getRemotePlugins } from "../modules/pluginData";
 
 const root = "scripts";
-const rootS3 = "https://cloudfront.collapp.live/plugins/";
-
-const client = new AWS.S3({
-  accessKeyId: process.env.AWS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY_COLLAPP,
-});
 
 // -----------------------------------------------------------------------------------------------------
 
@@ -40,14 +34,15 @@ const downloadFileToLocalDirectory = async (plugin: string) => {
   const file = fs.createWriteStream(path.join(p, "server.js"));
   try {
     https
-      .get(rootS3 + plugin + "/server.js", (response) => {
+      .get(`${process.env.NEXT_PUBLIC_STORAGE_ROOT}/${plugin}/server.js`, (response) => {
         response.pipe(file);
         file.on("finish", () => {
           file.close();
         });
       })
       .on("error", (err) => {
-        fs.unlink(p, () => {});
+        fs.unlink(p, () => {
+        });
         safeDirectoryRemove(p);
         console.log(chalk.red(err));
       });
@@ -62,23 +57,10 @@ const deleteUnwanted = async (plugin: string) => {
 
 export async function syncPlugins() {
   const spinner = ora("Loading remote modules\n").start();
-
   safeDirectoryCreate(path.join(__dirname, root));
 
-  const params = {
-    Bucket: process.env.AWS_BUCKET,
-    Prefix: "plugins",
-  };
-
   try {
-    const { Contents } = await client.listObjectsV2(params).promise();
-    const remotePlugins = [
-      ...new Set(
-        Contents.map((element) => element.Key.split("/")[1]).filter(
-          (f) => f.length > 0
-        )
-      ),
-    ];
+    const remotePlugins = await getRemotePlugins()
 
     let localPlugins = fs.readdirSync(path.join(__dirname, "scripts"));
 
@@ -119,5 +101,6 @@ export async function syncPlugins() {
     }
   } catch (e) {
     Sentry.captureException(e);
+    spinner.fail("Loading remote modules failed")
   }
 }

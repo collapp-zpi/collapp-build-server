@@ -51,7 +51,9 @@ export function useWebsockets(url: string): Websocket {
       });
     });
 
-    return () => newSocket.close();
+    return () => {
+      newSocket.close()
+    };
   }, []);
 
   return { loading, connected, socket, state, send, errors, room, functions };

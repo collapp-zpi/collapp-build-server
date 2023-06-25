@@ -1,58 +1,59 @@
-import AWS from "aws-sdk";
+import axios from "axios";
+import { parseStringPromise } from "xml2js";
+import { URLSearchParams } from "url";
 
-const client = new AWS.S3({
-  accessKeyId: process.env.AWS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY_COLLAPP,
-});
+export async function getRemotePlugins(): Promise<string[]> {
+  const query = new URLSearchParams({ 'prefix': 'plugins' }).toString();
+  const request = await axios.get(process.env.NEXT_PUBLIC_STORAGE_ROOT + `?${query}`, {
+    headers: {
+      Authorization: `Bearer ${process.env.STORAGE_SECRET}`,
+    },
+  })
+  const parsed = await parseStringPromise(request.data)
+  const list = parsed?.ListBucketResult?.Contents ?? []
+  const keys = list.map(({ Key }) => Key[0].split('/')) as [string, string, string][]
+
+  return [
+    ...new Set(
+      keys.filter(([folder, plugin]) => folder === "plugins" && !!plugin)
+    )
+  ].map(([, , plugin]) => plugin)
+}
 
 export async function availablePlugins(): Promise<object[]> {
-  const params = {
-    Bucket: process.env.AWS_BUCKET,
-    Prefix: "plugins",
-  };
-
-  const { Contents } = await client.listObjectsV2(params).promise();
-  const plugins = [
-    ...new Set(
-      Contents.map((element) => element.Key.split("/")[1]).filter(
-        (f) => f.length > 0
-      )
-    ),
-  ];
+  const plugins = await getRemotePlugins()
 
   return plugins.map((p) => ({
     name: p,
-    entry: {
-      cached: `https://cloudfront.collapp.live/plugins/${p}/entry.js`,
-      direct: `http://aws.collapp.live/plugins/${p}/entry.js`,
-    },
+    entry: `${process.env.NEXT_PUBLIC_STORAGE_ROOT}/plugins/${p}/entry.js`,
   }));
 }
 
-export async function deletePlugin(plugin: { name: string }, cb) {
-  console.log("plugin: " + plugin.name);
-  const params = {
-    Bucket: process.env.AWS_BUCKET,
-    Prefix: "plugins/" + plugin.name,
-  };
+export async function deletePlugin(pluginId: string) {
+  try {
+    console.log("plugin: " + pluginId);
 
-  client.listObjects(params, function (err, data) {
-    if (err) return cb(false);
+    const getQuery = new URLSearchParams({ 'prefix': `plugins/${pluginId}` }).toString();
+    const getRequest = await axios.get(process.env.NEXT_PUBLIC_STORAGE_ROOT + `?${getQuery}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.STORAGE_SECRET}`,
+      },
+    })
+    const parsed = await parseStringPromise(getRequest.data)
+    const keys = parsed.ListBucketResult.Contents.map(({ Key }) => Key)
+    console.log(keys)
+    if (!keys) return false
 
-    if (data.Contents.length == 0) return cb(false);
-    console.log(data.Contents);
-    const deleteParams = {
-      Bucket: process.env.AWS_BUCKET,
-      Delete: { Objects: [] },
-    };
+    const deleteQuery = new URLSearchParams({ 'delete': 'true' }).toString();
+    await axios.post(process.env.NEXT_PUBLIC_STORAGE_ROOT + `?${deleteQuery}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.STORAGE_SECRET}`,
+      },
+      data: keys
+    })
 
-    data.Contents.forEach(function (content) {
-      deleteParams.Delete.Objects.push({ Key: content.Key });
-    });
-    console.log("delete params: ", JSON.stringify(deleteParams));
-    client.deleteObjects(deleteParams, function (err, data) {
-      if (err) return cb(false);
-      else return cb(true);
-    });
-  });
+    return true
+  } catch (e) {
+    return false
+  }
 }

@@ -9,11 +9,10 @@ pluginRouter.get("/plugins", async (req: Request, res: Response) => {
   res.status(200).send(plugins);
 });
 
-pluginRouter.delete("/plugin/:name", async (req: Request, res: Response) => {
-  await deletePlugin({ name: req.params.name }, (success) => {
-    if (success) res.status(200).send({ success: true });
-    else res.status(410).send({ success: false });
-  });
+pluginRouter.delete("/plugin/:id", async (req: Request, res: Response) => {
+  const success = await deletePlugin(req.params.id);
+  if (success) res.status(200).send({ success });
+  else res.status(410).send({ success });
 });
 
 pluginRouter.get("/drafts", async (req: Request, res: Response) => {

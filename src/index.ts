@@ -4,8 +4,6 @@ import { syncPlugins } from "./modules/loadFromRemote";
 import { spacePluginExists } from "./ws/updateDB";
 import { Server } from "socket.io";
 import Room from "./ws/room";
-import fs from "fs-extra";
-import path from "path";
 
 const s = server.listen(process.env.PORT, async () => {
   console.log(

@@ -6,25 +6,27 @@ import {
 import path from "path";
 import ora from "ora";
 
-const tempPath = path.join(__dirname, "temp");
-const plugin = path.join(__dirname, "..", "build", "plugin");
+const tempPath = path.resolve(__dirname, "temp");
+const plugin = path.resolve(__dirname, "..", "build", "plugin");
 
 export function cleanup() {
   const cleanSpinner = ora("Clean up");
-  safeFileRemove(path.join(tempPath, "plugin.zip"));
-  safeFileRemove(path.join(tempPath, "tailwind.config.js"));
-  safeFileRemove(path.join(tempPath, "hash.json"));
-  safeFileRemove(path.join(tempPath, "collapp-config.json"));
-  safeFileRemove(path.join(tempPath, "server.js"));
+  safeFileRemove(path.resolve(tempPath, "plugin.zip"));
+  safeFileRemove(path.resolve(tempPath, "tailwind.config.js"));
+  safeFileRemove(path.resolve(tempPath, "hash.json"));
+  safeFileRemove(path.resolve(tempPath, "collapp-config.json"));
+  safeFileRemove(path.resolve(tempPath, "server.js"));
   safeMove(tempPath, plugin);
   cleanSpinner.succeed();
 }
 
 export function cleanupAfter() {
   const cleanSpinner = ora("Clean up");
-  safeDirectoryRemove(path.join(__dirname, "../", "build", "plugin"));
-  safeDirectoryRemove(path.join(__dirname, "../", "build", "node_modules"));
+  safeDirectoryRemove(path.resolve(__dirname, "../", "build", "plugin"));
+  safeDirectoryRemove(path.resolve(__dirname, "../", "build", "node_modules"));
   safeDirectoryRemove(tempPath);
-  safeDirectoryRemove(path.join(__dirname, "../", "../", "dist"));
+  safeDirectoryRemove(path.resolve(__dirname, "../", "../", "dist"));
+  safeFileRemove(path.resolve(__dirname, "../", "build", "package.json"));
+  safeFileRemove(path.resolve(__dirname, "../", "build", "package-lock.json"));
   cleanSpinner.succeed();
 }

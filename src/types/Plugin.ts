@@ -5,7 +5,5 @@ export interface PluginRequest {
     name: string;
     email: string;
   };
-  zip: {
-    url: string;
-  };
+  path: string;
 }

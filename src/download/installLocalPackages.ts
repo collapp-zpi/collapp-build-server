@@ -57,8 +57,8 @@ export default async function installPackages(
           resolve(true);
         })
         .catch((e) => {
-          console.log(e);
           spinner.fail();
+          console.log(e);
           resolve(false);
         });
     });

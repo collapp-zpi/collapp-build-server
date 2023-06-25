@@ -25,4 +25,5 @@ export const excluded = [
   "tailwindcss",
   "react",
   "tailwindcss-textshadow",
+  "socket.io"
 ];

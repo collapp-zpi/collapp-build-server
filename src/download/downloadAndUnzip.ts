@@ -30,7 +30,7 @@ export default async function downloadAndUnzip(
   const downloadSpinner = ora("Download zipped code").start();
 
   const downloadResponse = await downloadToFile(
-    request.zip.url,
+    process.env.NEXT_PUBLIC_STORAGE_ROOT + '/' + request.path,
     path.join(tempPath, "plugin.zip")
   );
   if (downloadResponse) {
