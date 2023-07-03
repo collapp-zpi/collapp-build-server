@@ -24,6 +24,10 @@ async function moveFiles() {
     path.join(__dirname, "webpack.js"),
     path.join(buildPath, "webpack.js")
   );
+  fs.copyFileSync(
+    path.join(__dirname, ".env"),
+    path.join(buildPath, ".env")
+  );
 }
 
 module.exports = { moveFiles };
