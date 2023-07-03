@@ -8,7 +8,7 @@ import ora from "ora";
 import { safeDirectoryCreate, safeDirectoryRemove } from "../utils/fileUtils";
 
 async function install(name: string, version): Promise<Boolean> {
-  const p = `${name}${version}`.replace("^", "@");
+  const p = `${name}@${version}`.replace("^", "");
   return new Promise<Boolean>((resolve, reject) => {
     npm
       .install(p, {
@@ -18,7 +18,8 @@ async function install(name: string, version): Promise<Boolean> {
       .then(() => {
         resolve(true);
       })
-      .catch(() => {
+      .catch((e) => {
+        console.log(e);
         reject(false);
       });
   });
